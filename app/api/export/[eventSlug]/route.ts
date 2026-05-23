@@ -2,13 +2,6 @@
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-const Papa = require('papaparse');
-
-// ← Agrega esta línea justo aquí
-declare module 'papaparse' {
-  const Papa: any;
-  export default Papa;
-}
 
 export async function GET(
   request: Request,
@@ -33,24 +26,12 @@ export async function GET(
     return NextResponse.json({ error: "Evento no encontrado o sin acceso" }, { status: 403 });
   }
 
-  const attendees = event.attendees.map((a: any) => ({
-    Nombre: a.name,
-    Email: a.email,
-    Empresa: a.company || '',
-    Teléfono: a.phone || '',
-    Código: a.qrCode,
-    Estado: a.status === 'CHECKED_IN' ? 'CHECK-IN REALIZADO' : 'Registrado',
-    'Fecha Check-in': a.checkedInAt ? new Date(a.checkedInAt).toLocaleString('es-MX') : '',
-    'Fecha Registro': new Date(a.createdAt).toLocaleString('es-MX')
-  }));
-
-  // Generar CSV
-  const csv = Papa.unparse(attendees);
-
-  return new NextResponse(csv, {
-    headers: {
-      'Content-Type': 'text/csv',
-      'Content-Disposition': `attachment; filename="${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.csv"`
+  // Solo devolvemos los datos (el CSV se genera en el frontend con Excel)
+  return NextResponse.json({
+    success: true,
+    event: {
+      name: event.name,
+      attendees: event.attendees
     }
   });
 }

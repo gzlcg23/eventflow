@@ -81,8 +81,7 @@ export default function DashboardClient({
       });
     });
 
-    const csv = Papa.unparse(allData);
-    const blob = new Blob([csv], { type: 'text/csv' });
+   
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

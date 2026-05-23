@@ -1,6 +1,7 @@
 // app/api/registro/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+// @ts-ignore
 import QRCode from 'qrcode';
 import { Resend } from 'resend';
 

@@ -26,7 +26,6 @@ export async function GET(
     return NextResponse.json({ error: "Evento no encontrado o sin acceso" }, { status: 403 });
   }
 
-  // Solo devolvemos los datos (el CSV se genera en el frontend con Excel)
   return NextResponse.json({
     success: true,
     event: {

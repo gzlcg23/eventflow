@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Check, Search, Users, Clock, Download, FileText } from 'lucide-react';
-import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -41,27 +40,6 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   const checkedInCount = attendees.filter(a => a.status === 'CHECKED_IN').length;
   const totalAttendees = attendees.length;
 
-  // Exportar CSV
-  const exportCSV = () => {
-    const data = attendees.map(a => ({
-      Nombre: a.name,
-      Email: a.email,
-      Empresa: a.company || '',
-      Teléfono: a.phone || '',
-      Código: a.qrCode,
-      Estado: a.status === 'CHECKED_IN' ? 'CHECK-IN REALIZADO' : 'Registrado',
-      'Fecha Check-in': a.checkedInAt ? new Date(a.checkedInAt).toLocaleString('es-MX') : '',
-      'Fecha Registro': new Date(a.createdAt).toLocaleString('es-MX')
-    }));
-
-    const csv = Papa.unparse(data);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.csv`;
-    a.click();
-  };
 
     // Exportar PDF - Versión corregida y más estable
   const exportPDF = () => {

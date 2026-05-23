@@ -26,6 +26,7 @@ export async function GET(
     return NextResponse.json({ error: "Evento no encontrado o sin acceso" }, { status: 403 });
   }
 
+  // Devolvemos los datos en JSON (el Excel se genera en el frontend)
   return NextResponse.json({
     success: true,
     event: {

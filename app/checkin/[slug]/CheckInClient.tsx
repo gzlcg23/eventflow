@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Check, Search, Users, Clock, Download, FileText } from 'lucide-react';
-import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';

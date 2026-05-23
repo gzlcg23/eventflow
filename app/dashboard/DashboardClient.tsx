@@ -6,7 +6,6 @@ import { Users, CheckCircle, Calendar, TrendingUp, Download, FileText } from 'lu
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, differenceInDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';

@@ -41,6 +41,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   const totalAttendees = attendees.length;
 
   // Exportar CSV
+  // Exportar CSV
   const exportCSV = () => {
     const data = attendees.map(a => ({
       Nombre: a.name,
@@ -53,11 +54,26 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       'Fecha Registro': new Date(a.createdAt).toLocaleString('es-MX')
     }));
 
+    // 1. Convertir el objeto data a texto CSV con BOM para que Excel detecte bien los acentos
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map(row => 
+      Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")
+    );
+    const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
+
+    // 2. Crear el Blob correctamente
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
+    
     const a = document.createElement('a');
     a.href = url;
     a.download = `${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.csv`;
+    
+    // 3. Añadir al documento, hacer click y limpiar
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
     // Exportar PDF - Versión corregida y más estable

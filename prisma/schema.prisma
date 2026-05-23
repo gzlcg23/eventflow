@@ -1,0 +1,91 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // ← Eliminamos la línea de url de aquí
+}
+
+// ======================
+// MODELOS PRINCIPALES
+// ======================
+
+model User {
+  id          String    @id @default(cuid())
+  clerkId     String    @unique
+  email       String
+  firstName   String?
+  lastName    String?
+  avatarUrl   String?
+  role        UserRole  @default(ORGANIZER)
+
+  events      Event[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Event {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  eventNumber     String    @unique
+
+  name            String
+  description     String?
+  date            DateTime
+  endDate         DateTime?
+  location        String?
+  locationUrl     String?
+  bannerUrl       String?
+  
+  isPublic        Boolean   @default(true)
+  accessCode      String?
+  isActive        Boolean   @default(false)
+  paymentStatus   String    @default("PENDING")
+  paymentAmount   Decimal?
+  deactivationReason  String?     // ← Nuevo campo
+  activatedAt     DateTime?                    // ← Nuevo
+  paymentMethod   String?
+  paymentNotes    String?
+
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  attendees       Attendee[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+enum UserRole {
+  ORGANIZER
+  SUPER_ADMIN
+}
+
+model Attendee {
+  id          String         @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  phone       String?
+  
+  qrCode      String         @unique
+  status      AttendeeStatus @default(REGISTERED)
+  checkedInAt DateTime?
+  notes       String?
+
+  eventId     String
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([email, eventId])
+  @@map("attendees")
+}
+
+enum AttendeeStatus {
+  REGISTERED
+  CHECKED_IN
+  CANCELLED
+}

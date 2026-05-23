@@ -2,7 +2,13 @@
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import Papa from 'papaparse';
+const Papa = require('papaparse');
+
+// ← Agrega esta línea justo aquí
+declare module 'papaparse' {
+  const Papa: any;
+  export default Papa;
+}
 
 export async function GET(
   request: Request,

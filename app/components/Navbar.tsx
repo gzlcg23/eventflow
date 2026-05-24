@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo + Menú Desktop (ambos a la izquierda) */}
+        {/* Logo + Menú Desktop */}
         <div className="flex items-center gap-10">
           <Link href="/" className="text-2xl font-bold text-black">
             EventFlow
@@ -37,8 +37,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Acciones (derecha) */}
-        <div className="flex items-center gap-4">
+        {/* Acciones Desktop */}
+        <div className="hidden md:flex items-center gap-4">
           {isSignedIn ? (
             <UserButton afterSignOutUrl="/" />
           ) : (
@@ -54,21 +54,27 @@ export default function Navbar() {
               </Link>
             </>
           )}
-
-          {/* Botón Hamburguesa Mobile */}
-          <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-gray-700 p-2"
-          >
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
         </div>
+
+        {/* Botón Hamburguesa */}
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-gray-700 p-2"
+        >
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
       </div>
 
       {/* Menú Mobile Flotante */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/70 z-50 md:hidden">
-          <div className="bg-white h-full w-4/5 max-w-xs ml-auto shadow-xl">
+        <div 
+          className="fixed inset-0 bg-black/70 z-50 md:hidden"
+          onClick={() => setIsOpen(false)} // Clic fuera cierra el menú
+        >
+          <div 
+            className="bg-white h-full w-4/5 max-w-xs ml-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()} // Evita cerrar al clicar dentro
+          >
             <div className="p-6 flex justify-between items-center border-b">
               <Link href="/" className="text-2xl font-bold text-black" onClick={() => setIsOpen(false)}>
                 EventFlow

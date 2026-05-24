@@ -68,22 +68,27 @@ export default function Navbar() {
       {/* Menú Mobile Flotante */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/70 z-50 md:hidden"
-          onClick={() => setIsOpen(false)} // Clic fuera cierra el menú
+          className="fixed inset-0 bg-black/70 z-[60] md:hidden"
+          onClick={() => setIsOpen(false)}
         >
           <div 
-            className="bg-white h-full w-4/5 max-w-xs ml-auto shadow-xl"
-            onClick={(e) => e.stopPropagation()} // Evita cerrar al clicar dentro
+            className="bg-white h-full w-4/5 max-w-xs ml-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* Header del menú */}
             <div className="p-6 flex justify-between items-center border-b">
               <Link href="/" className="text-2xl font-bold text-black" onClick={() => setIsOpen(false)}>
                 EventFlow
               </Link>
-              <button onClick={() => setIsOpen(false)}>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-gray-700 p-2"
+              >
                 <X size={28} />
               </button>
             </div>
 
+            {/* Contenido del menú */}
             <div className="p-6 flex flex-col gap-6 text-lg">
               {isSignedIn ? (
                 <>

@@ -134,55 +134,75 @@ export default function EventosPage() {
             <div className="mb-12">
               <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeEvents.map((event) => (
-                <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <Link href={`/evento/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
-                        {event.name}
-                      </Link>
-                      <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
-                    </div>
+                {/* Eventos Activos */}
+                {activeEvents.length > 0 && (
+                  <div className="mb-12">
+                    <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {activeEvents.map((event) => {
+                        const eventDate = new Date(event.date);
+                        const isPast = eventDate < new Date();   // Ya pasó la fecha
 
-                    <div className="flex items-center gap-2">
-                      {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
-                      <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">Activo</span>
+                        return (
+                          <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <Link href={`/evento/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
+                                  {event.name}
+                                </Link>
+                                <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
+                                <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">Activo</span>
+                              </div>
+                            </div>
+
+                            <p className="text-gray-500 text-sm mb-4">{event.location}</p>
+                            <p className="text-sm text-gray-400">
+                              {format(eventDate, "dd MMM yyyy - HH:mm")}
+                            </p>
+
+                            <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
+                              {/* Check-in siempre activo si el evento está pagado */}
+                              <Link href={`/checkin/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Check-in">
+                                <Scan size={20} />
+                              </Link>
+
+                              {/* Copiar y Compartir solo si NO ha pasado la fecha */}
+                              {!isPast && (
+                                <>
+                                  <button onClick={() => copyPublicLink(event.slug)} className="flex items-center justify-center w-10 h-10 text-gray-600 hover:bg-gray-100 rounded-xl transition" title="Copiar link">
+                                    <Copy size={20} />
+                                  </button>
+
+                                  <button onClick={() => shareEvent(event)} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Compartir">
+                                    <Share2 size={20} />
+                                  </button>
+                                </>
+                              )}
+
+                              {/* ExternalLink comentado */}
+                              {/* <Link href={`/evento/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Ver página pública">
+                                <ExternalLink size={20} />
+                              </Link> */}
+
+                              {/* Editar y Eliminar siempre visibles */}
+                              <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
+                                <Edit3 size={20} />
+                              </Link>
+
+                              <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
+                                <Trash2 size={20} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-                  <p className="text-sm text-gray-400">
-                    {format(new Date(event.date), "dd MMM yyyy - HH:mm")}
-                  </p>
-
-                  <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
-                    <Link href={`/checkin/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Check-in">
-                      <Scan size={20} />
-                    </Link>
-
-                    <button onClick={() => copyPublicLink(event.slug)} className="flex items-center justify-center w-10 h-10 text-gray-600 hover:bg-gray-100 rounded-xl transition" title="Copiar link">
-                      <Copy size={20} />
-                    </button>
-
-                    <button onClick={() => shareEvent(event)} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Compartir">
-                      <Share2 size={20} />
-                    </button>
-
-                    {/* ExternalLink comentado como pediste */}
-                    {/* <Link href={`/evento/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Ver página pública">
-                      <ExternalLink size={20} />
-                    </Link> */}
-
-                    <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
-                      <Edit3 size={20} />
-                    </Link>
-
-                    <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )}
               </div>
             </div>
           )}
@@ -192,39 +212,47 @@ export default function EventosPage() {
             <div>
               <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Finalizados ({pastEvents.length})</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
-                {pastEvents.map((event) => (
-                  <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group opacity-75">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-xl mb-1 text-gray-400 cursor-default">
-                          {event.name}
-                        </h3>
-                        <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
-                      </div>
+                {/* Eventos Inactivos / Finalizados */}
+                {pastEvents.length > 0 && (
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Finalizados / Inactivos ({pastEvents.length})</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
+                      {pastEvents.map((event) => (
+                        <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="font-semibold text-xl mb-1 text-gray-400 cursor-default">
+                                {event.name}
+                              </h3>
+                              <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
+                            </div>
 
-                      <div className="flex items-center gap-2">
-                        {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
-                        <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Inactivo</span>
-                      </div>
-                    </div>
+                            <div className="flex items-center gap-2">
+                              {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
+                              <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Inactivo</span>
+                            </div>
+                          </div>
 
-                    <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-                    <p className="text-sm text-gray-400">
-                      {format(new Date(event.date), "dd MMM yyyy - HH:mm")}
-                    </p>
+                          <p className="text-gray-500 text-sm mb-4">{event.location}</p>
+                          <p className="text-sm text-gray-400">
+                            {format(new Date(event.date), "dd MMM yyyy - HH:mm")}
+                          </p>
 
-                    <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
-                      {/* Solo Editar y Eliminar para eventos inactivos/finalizados */}
-                      <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
-                        <Edit3 size={20} />
-                      </Link>
+                          <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
+                            {/* Solo Editar y Eliminar para inactivos */}
+                            <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
+                              <Edit3 size={20} />
+                            </Link>
 
-                      <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
-                        <Trash2 size={20} />
-                      </button>
+                            <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
+                              <Trash2 size={20} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}

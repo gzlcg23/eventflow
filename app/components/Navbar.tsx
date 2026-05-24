@@ -14,9 +14,7 @@ export default function Navbar() {
     return (
       <nav className="border-b bg-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-black">
-            EventFlow
-          </Link>
+          <Link href="/" className="text-2xl font-bold text-black">EventFlow</Link>
         </div>
       </nav>
     );
@@ -24,77 +22,85 @@ export default function Navbar() {
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        {/* Logo + Menú Desktop (ambos a la izquierda) */}
+        <div className="flex items-center gap-10">
           <Link href="/" className="text-2xl font-bold text-black">
             EventFlow
           </Link>
 
-          {/* Menú Desktop */}
-          <div className="hidden md:flex items-center gap-8">
-            {isSignedIn && (
-              <>
-                <Link href="/dashboard" className="hover:text-black transition">Dashboard</Link>
-                <Link href="/eventos" className="hover:text-black transition">Mis Eventos</Link>
-              </>
-            )}
-          </div>
+          {isSignedIn && (
+            <div className="hidden md:flex items-center gap-8">
+              <Link href="/eventos" className="hover:text-black transition font-medium">Mis Eventos</Link>
+              <Link href="/dashboard" className="hover:text-black transition font-medium">Dashboard</Link>
+            </div>
+          )}
+        </div>
 
-          {/* Botones Desktop */}
-          <div className="hidden md:flex items-center gap-4">
-            {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
-            ) : (
-              <>
-                <SignInButton mode="modal">
-                  <button className="font-medium hover:text-black transition">Iniciar Sesión</button>
-                </SignInButton>
-                <Link 
-                  href="/sign-up" 
-                  className="bg-black text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 transition"
-                >
-                  Registrarse
-                </Link>
-              </>
-            )}
-          </div>
+        {/* Acciones (derecha) */}
+        <div className="flex items-center gap-4">
+          {isSignedIn ? (
+            <UserButton afterSignOutUrl="/" />
+          ) : (
+            <>
+              <SignInButton mode="modal">
+                <button className="font-medium hover:text-black transition">Iniciar Sesión</button>
+              </SignInButton>
+              <Link 
+                href="/sign-up" 
+                className="bg-black text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 transition"
+              >
+                Registrarse
+              </Link>
+            </>
+          )}
 
           {/* Botón Hamburguesa Mobile */}
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-gray-700"
+            className="md:hidden text-gray-700 p-2"
           >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
+      </div>
 
-        {/* Menú Mobile */}
-        {isOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t pt-4">
-            <div className="flex flex-col gap-4 text-lg">
+      {/* Menú Mobile Flotante */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/70 z-50 md:hidden">
+          <div className="bg-white h-full w-4/5 max-w-xs ml-auto shadow-xl">
+            <div className="p-6 flex justify-between items-center border-b">
+              <Link href="/" className="text-2xl font-bold text-black" onClick={() => setIsOpen(false)}>
+                EventFlow
+              </Link>
+              <button onClick={() => setIsOpen(false)}>
+                <X size={28} />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col gap-6 text-lg">
               {isSignedIn ? (
                 <>
-                  <Link href="/dashboard" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
-                    Dashboard
-                  </Link>
                   <Link href="/eventos" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
                     Mis Eventos
                   </Link>
-                  <div className="pt-4">
+                  <Link href="/dashboard" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <div className="pt-6">
                     <UserButton afterSignOutUrl="/" />
                   </div>
                 </>
               ) : (
                 <>
                   <SignInButton mode="modal">
-                    <button className="font-medium hover:text-black transition" onClick={() => setIsOpen(false)}>
+                    <button className="font-medium hover:text-black transition w-full text-left" onClick={() => setIsOpen(false)}>
                       Iniciar Sesión
                     </button>
                   </SignInButton>
                   <Link 
                     href="/sign-up" 
-                    className="bg-black text-white px-5 py-3 rounded-xl hover:bg-gray-800 transition text-center"
+                    className="bg-black text-white px-6 py-3.5 rounded-2xl text-center hover:bg-gray-800 transition"
                     onClick={() => setIsOpen(false)}
                   >
                     Registrarse
@@ -103,8 +109,8 @@ export default function Navbar() {
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 }

@@ -105,13 +105,13 @@ export default function EventosPage() {
         <h1 className="text-4xl font-bold">Mis Eventos</h1>
         
         <div className="flex gap-3">
-          <button
+        {/*  <button
             onClick={exportExcel}
             className="flex items-center gap-3 bg-white border border-gray-300 text-black px-6 py-3 rounded-xl hover:bg-gray-50 transition font-medium"
           >
             <Download size={20} />
             Descargar Excel
-          </button>
+          </button>*/}
 
           <Link
             href="/eventos/nuevo"
@@ -169,9 +169,9 @@ export default function EventosPage() {
                         <Share2 size={20} />
                       </button>
 
-                      <Link href={`/evento/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Ver página pública">
+                     {/* <Link href={`/evento/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Ver página pública">
                         <ExternalLink size={20} />
-                      </Link>
+                      </Link>*/}
 
                       <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
                         <Edit3 size={20} />

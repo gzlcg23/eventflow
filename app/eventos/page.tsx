@@ -156,23 +156,31 @@ export default function EventosPage() {
               <div className="flex items-center gap-2">
                 {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
                 
-                {isPast ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Finalizado</span>
-                    <div className="relative group">
-                      <div className="text-amber-500 hover:text-amber-600 cursor-help">
-                        <AlertCircle size={20} />
-                      </div>
-                      <div className="absolute hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-4 py-3 w-72 -top-2 right-8 z-10">
-                        Este evento ya finalizó.<br />
-                        Quedan <strong>{daysLeft} días</strong> para descargar la información<br />
-                        antes de que se archive automáticamente.
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">Activo</span>
-                )}
+                {isPast && (
+  <div className="flex items-center gap-2">
+    <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Finalizado</span>
+    
+    {/* Tooltip mejorado para móviles */}
+    <div className="relative">
+      <button 
+        onClick={() => {
+          const tooltip = document.getElementById(`tooltip-${event.id}`);
+          if (tooltip) tooltip.classList.toggle('hidden');
+        }}
+        className="text-amber-500 hover:text-amber-600"
+      >
+        <AlertCircle size={20} />
+      </button>
+      
+      {/* Tooltip */}
+      <div id={`tooltip-${event.id}`} className="hidden absolute bg-gray-900 text-white text-xs rounded-lg px-4 py-3 w-72 -top-2 right-8 z-10">
+        Este evento ya finalizó.<br />
+        Cuentas con <strong>{daysLeft} días</strong> para descargar la información de tu evento<br />
+        antes de que se archive automáticamente.
+      </div>
+    </div>
+  </div>
+)}
               </div>
             </div>
 

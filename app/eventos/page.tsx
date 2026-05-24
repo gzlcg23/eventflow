@@ -132,6 +132,7 @@ export default function EventosPage() {
           {/* Eventos Activos */}
           {/* Eventos Activos */}
 {/* Eventos Activos */}
+{/* Eventos Activos */}
 {activeEvents.length > 0 && (
   <div className="mb-12">
     <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
@@ -139,12 +140,14 @@ export default function EventosPage() {
       {activeEvents.map((event) => {
         const eventDate = new Date(event.date);
         const isPast = eventDate < new Date();   // Ya pasó la fecha
+        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - eventDate.getTime()) / (1000 * 3600 * 24)) : 0;
+        const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días para archivar
 
         return (
           <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <Link href={`/evento/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
+                <Link href={`/checkin/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
                   {event.name}
                 </Link>
                 <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
@@ -156,15 +159,13 @@ export default function EventosPage() {
                 {isPast ? (
                   <div className="flex items-center gap-2">
                     <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Finalizado</span>
-                    {/* Icono de alerta con tooltip */}
                     <div className="relative group">
                       <div className="text-amber-500 hover:text-amber-600 cursor-help">
                         <AlertCircle size={20} />
                       </div>
-                      {/* Tooltip */}
                       <div className="absolute hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-4 py-3 w-72 -top-2 right-8 z-10">
-                        Este evento ya pasó su fecha.<br />
-                        Tienes <strong>2 meses</strong> para descargar la información<br />
+                        Este evento ya finalizó.<br />
+                        Quedan <strong>{daysLeft} días</strong> para descargar la información<br />
                         antes de que se archive automáticamente.
                       </div>
                     </div>
@@ -182,10 +183,12 @@ export default function EventosPage() {
             </p>
 
             <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
+              {/* Check-in siempre visible si está activo */}
               <Link href={`/checkin/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Check-in">
                 <Scan size={20} />
               </Link>
 
+              {/* Copiar y Compartir solo si la fecha NO ha pasado */}
               {!isPast && (
                 <>
                   <button onClick={() => copyPublicLink(event.slug)} className="flex items-center justify-center w-10 h-10 text-gray-600 hover:bg-gray-100 rounded-xl transition" title="Copiar link">
@@ -198,13 +201,18 @@ export default function EventosPage() {
                 </>
               )}
 
-             {/* <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
-                <Edit3 size={20} />
-              </Link>
+              {/* Editar y Eliminar solo si la fecha NO ha pasado */}
+              {!isPast && (
+                <>
+                  <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
+                    <Edit3 size={20} />
+                  </Link>
 
-              <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
-                <Trash2 size={20} />
-              </button>*/}
+                  <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
+                    <Trash2 size={20} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         );

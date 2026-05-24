@@ -141,24 +141,33 @@ export default function EventosPage() {
 
         return (
           <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <Link href={`/evento/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
-                  {event.name}
-                </Link>
-                <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
-              </div>
+            {/* Dentro del activeEvents.map */}
+<div className="flex justify-between items-start mb-4">
+  <div>
+    <Link href={`/evento/${event.slug}`} className="font-semibold text-xl mb-1 hover:text-emerald-600 transition cursor-pointer">
+      {event.name}
+    </Link>
+    <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
+  </div>
 
-              <div className="flex items-center gap-2">
-                {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
-                <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">Activo</span>
-              </div>
-            </div>
+  <div className="flex items-center gap-2">
+    {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
+    
+    {isPast ? (
+      <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Finalizado</span>
+    ) : (
+      <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700">Activo</span>
+    )}
+  </div>
+</div>
 
-            <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-            <p className="text-sm text-gray-400">
-              {format(eventDate, "dd MMM yyyy - HH:mm")}
-            </p>
+<p className="text-gray-500 text-sm mb-4">{event.location}</p>
+
+{/* Fecha con color rojo si ya pasó */}
+<p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
+  {format(eventDate, "dd MMM yyyy - HH:mm")}
+  {isPast && " • Finalizado"}
+</p>
 
             <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
               <Link href={`/checkin/${event.slug}`} className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Check-in">

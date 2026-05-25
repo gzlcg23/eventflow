@@ -102,25 +102,25 @@ export default function EventosPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Mis Eventos</h1>
-        
-        <div className="flex gap-3">
-        {/*  <button
-            onClick={exportExcel}
-            className="flex items-center gap-3 bg-white border border-gray-300 text-black px-6 py-3 rounded-xl hover:bg-gray-50 transition font-medium"
-          >
-            <Download size={20} />
-            Descargar Excel
-          </button>*/}
+  <h1 className="text-4xl font-bold">Mis Eventos</h1>
+  
+  <div className="flex flex-wrap gap-3">
+    <button
+      onClick={exportExcel}
+      className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-5 py-3 rounded-xl hover:bg-gray-50 transition text-sm md:text-base"
+    >
+      <Download size={18} />
+      <span className="hidden sm:inline">Descargar Excel</span>
+    </button>
 
-          <Link
-            href="/eventos/nuevo"
-            className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition flex items-center gap-2"
-          >
-            + Crear Nuevo Evento
-          </Link>
-        </div>
-      </div>
+    <Link
+      href="/eventos/nuevo"
+      className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition flex items-center gap-2 text-sm md:text-base"
+    >
+      + Crear Nuevo Evento
+    </Link>
+  </div>
+</div>
 
       {events.length === 0 ? (
         <div className="bg-white border border-dashed border-gray-300 rounded-3xl p-16 text-center">
@@ -175,7 +175,7 @@ export default function EventosPage() {
       {/* Tooltip */}
       <div id={`tooltip-${event.id}`} className="hidden absolute bg-gray-900 text-white text-xs rounded-lg px-4 py-3 w-72 -top-2 right-8 z-10">
         Este evento ya finalizó.<br />
-        Cuentas con <strong>{daysLeft} días</strong> para descargar la información de tu evento<br />
+        Cuentas con <strong>{daysLeft} días</strong> para descargar la información de tu evento
         antes de que se archive automáticamente.
       </div>
     </div>

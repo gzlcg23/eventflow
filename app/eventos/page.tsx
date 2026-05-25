@@ -105,13 +105,13 @@ export default function EventosPage() {
     <h1 className="text-3xl md:text-4xl font-bold">Mis Eventos</h1>
     
     <div className="flex gap-3">
-      <button
+     {/* <button
         onClick={exportExcel}
         className="hidden md:flex items-center gap-3 bg-white border border-gray-300 text-black px-6 py-3 rounded-xl hover:bg-gray-50 transition font-medium"
       >
         <Download size={20} />
         Descargar Excel
-      </button>
+      </button>*/}
 
       <Link
         href="/eventos/nuevo"
@@ -138,9 +138,7 @@ export default function EventosPage() {
     </div>
   ) : (
         <>
-          {/* Eventos Activos */}
-          {/* Eventos Activos */}
-{/* Eventos Activos */}
+
 {/* Eventos Activos */}
 {activeEvents.length > 0 && (
   <div className="mb-12">

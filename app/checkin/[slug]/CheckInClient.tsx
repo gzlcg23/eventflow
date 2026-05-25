@@ -159,7 +159,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     return () => scanner.clear();
   }, [scanning, attendees]);
 
-  return (
+    return (
     <div className="space-y-8">
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -185,7 +185,8 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         onClick={() => setScanning(!scanning)}
         className="w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
       >
-        📷 {scanning ? "Detener Escáner" : "Escanear QR para Check-in"}
+        <QrCode size={24} />
+        {scanning ? "Detener Escáner" : "Escanear QR para Check-in"}
       </button>
 
       {/* Barra de búsqueda */}
@@ -196,17 +197,25 @@ export default function CheckInClient({ event }: CheckInClientProps) {
           placeholder="Buscar por nombre, email o código único..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-2xl focus:outline-none focus:border-zinc-600"
+          className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-3xl focus:outline-none focus:border-zinc-600"
         />
       </div>
 
-      {/* Sección de Reportes - Discreta */}
-      <div className="flex items-center gap-3 text-sm text-gray-400 border-t border-zinc-800 pt-6">
-        <span className="font-medium text-white">Reportes:</span>
-        <button onClick={exportExcel} className="flex items-center gap-2 hover:text-white transition" title="Descargar Excel">
+      {/* Sección de Reportes - Muy discreta */}
+      <div className="flex items-center gap-4 text-sm text-gray-400 border-t border-zinc-800 pt-6">
+        <span className="font-medium text-white whitespace-nowrap">Reportes:</span>
+        <button 
+          onClick={exportExcel} 
+          className="flex items-center gap-2 hover:text-white transition px-3 py-1 rounded-lg hover:bg-zinc-800"
+          title="Descargar Excel"
+        >
           <Download size={18} /> Excel
         </button>
-        <button onClick={exportPDF} className="flex items-center gap-2 hover:text-white transition" title="Descargar PDF">
+        <button 
+          onClick={exportPDF} 
+          className="flex items-center gap-2 hover:text-white transition px-3 py-1 rounded-lg hover:bg-zinc-800"
+          title="Descargar PDF"
+        >
           <FileText size={18} /> PDF
         </button>
       </div>
@@ -248,9 +257,10 @@ export default function CheckInClient({ event }: CheckInClientProps) {
                 ) : (
                   <button
                     onClick={() => handleCheckIn(attendee.id)}
-                    className="bg-white text-black px-6 py-2.5 rounded-xl font-medium hover:bg-gray-200"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition"
+                    title="Hacer Check-in Manual"
                   >
-                    Hacer Check-in
+                    <Check size={22} />
                   </button>
                 )}
               </div>
@@ -260,4 +270,3 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       </div>
     </div>
   );
-}

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { Check, Search, Users, Clock, Download, FileText, Share2 } from 'lucide-react';
+import { Check, Search, Users, Clock, Download, FileText, QrCode, Share2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -159,7 +159,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     return () => scanner.clear();
   }, [scanning, attendees]);
 
-    return (
+  return (
     <div className="space-y-8">
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,7 +180,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botón Escanear QR - Prominente */}
+      {/* Botón Escanear QR */}
       <button
         onClick={() => setScanning(!scanning)}
         className="w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
@@ -201,21 +201,13 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         />
       </div>
 
-      {/* Sección de Reportes - Muy discreta */}
+      {/* Sección de Reportes - Discreta */}
       <div className="flex items-center gap-4 text-sm text-gray-400 border-t border-zinc-800 pt-6">
         <span className="font-medium text-white whitespace-nowrap">Reportes:</span>
-        <button 
-          onClick={exportExcel} 
-          className="flex items-center gap-2 hover:text-white transition px-3 py-1 rounded-lg hover:bg-zinc-800"
-          title="Descargar Excel"
-        >
+        <button onClick={exportExcel} className="flex items-center gap-2 hover:text-white transition" title="Descargar Excel">
           <Download size={18} /> Excel
         </button>
-        <button 
-          onClick={exportPDF} 
-          className="flex items-center gap-2 hover:text-white transition px-3 py-1 rounded-lg hover:bg-zinc-800"
-          title="Descargar PDF"
-        >
+        <button onClick={exportPDF} className="flex items-center gap-2 hover:text-white transition" title="Descargar PDF">
           <FileText size={18} /> PDF
         </button>
       </div>
@@ -270,3 +262,4 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       </div>
     </div>
   );
+}

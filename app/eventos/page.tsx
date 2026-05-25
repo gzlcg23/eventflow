@@ -101,33 +101,42 @@ export default function EventosPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-  <h1 className="text-4xl font-bold">Mis Eventos</h1>
-  
-  <div className="flex flex-wrap gap-3">
-    <button
-      onClick={exportExcel}
-      className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-5 py-3 rounded-xl hover:bg-gray-50 transition text-sm md:text-base"
-    >
-      <Download size={18} />
-      <span className="hidden sm:inline">Descargar Excel</span>
-    </button>
+  <div className="flex justify-between items-center mb-8">
+    <h1 className="text-3xl md:text-4xl font-bold">Mis Eventos</h1>
+    
+    <div className="flex gap-3">
+      <button
+        onClick={exportExcel}
+        className="hidden md:flex items-center gap-3 bg-white border border-gray-300 text-black px-6 py-3 rounded-xl hover:bg-gray-50 transition font-medium"
+      >
+        <Download size={20} />
+        Descargar Excel
+      </button>
 
-    <Link
-      href="/eventos/nuevo"
-      className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition flex items-center gap-2 text-sm md:text-base"
-    >
-      + Crear Nuevo Evento
-    </Link>
+      <Link
+        href="/eventos/nuevo"
+        className="bg-black text-white px-5 py-3 md:px-6 md:py-3 rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2"
+      >
+        <span className="hidden md:inline">+</span>
+        <span className="md:hidden text-2xl leading-none">+</span>
+        <span className="hidden md:inline">Crear Nuevo Evento</span>
+      </Link>
+    </div>
   </div>
-</div>
 
-      {events.length === 0 ? (
-        <div className="bg-white border border-dashed border-gray-300 rounded-3xl p-16 text-center">
-          <h3 className="text-xl font-medium text-gray-400">Aún no tienes eventos</h3>
-          <p className="text-gray-500 mt-2">Crea tu primer evento para comenzar</p>
-        </div>
-      ) : (
+  {events.length === 0 ? (
+    <div className="bg-white border border-dashed border-gray-300 rounded-3xl p-16 text-center relative">
+      <h3 className="text-xl font-medium text-gray-400 mb-3">Aún no tienes eventos</h3>
+      <p className="text-gray-500 mb-8">
+        Crea tu primer evento dando clic en el botón <span className="font-semibold text-black">+</span> de arriba
+      </p>
+
+      {/* Animación sutil */}
+      <div className="flex justify-center">
+        <div className="animate-bounce text-4xl text-emerald-500">↑</div>
+      </div>
+    </div>
+  ) : (
         <>
           {/* Eventos Activos */}
           {/* Eventos Activos */}

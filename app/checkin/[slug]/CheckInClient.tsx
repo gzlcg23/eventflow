@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { Check, Search, Users, Clock, Download, FileText } from 'lucide-react';
+import { Check, Search, Users, Clock, Download, FileText, Share2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -40,15 +40,37 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   const checkedInCount = attendees.filter(a => a.status === 'CHECKED_IN').length;
   const totalAttendees = attendees.length;
 
+  // ==================== EXPORTAR EXCEL ====================
+  const exportExcel = () => {
+    if (attendees.length === 0) {
+      alert("No hay asistentes para exportar");
+      return;
+    }
 
-    // Exportar PDF - Versión corregida y más estable
+    const data = attendees.map((a: any) => ({
+      "Código QR": a.qrCode,
+      "Nombre": a.name,
+      "Email": a.email,
+      "Empresa": a.company || '',
+      "Teléfono": a.phone || '',
+      "Estado": a.status === 'CHECKED_IN' ? "CHECK-IN REALIZADO" : "Registrado",
+      "Fecha Check-in": a.checkedInAt ? format(new Date(a.checkedInAt), "dd/MM/yyyy HH:mm") : '',
+      "Fecha Registro": format(new Date(a.createdAt), "dd/MM/yyyy HH:mm")
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Asistentes");
+
+    XLSX.writeFile(wb, `${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+  };
+
+  // ==================== EXPORTAR PDF ====================
   const exportPDF = () => {
     const { jsPDF } = require('jspdf');
     const autoTable = require('jspdf-autotable');
 
     const doc = new jsPDF();
-    
-    // Título
     doc.setFontSize(18);
     doc.text(`Evento: ${event.name}`, 14, 20);
     
@@ -75,31 +97,6 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     });
 
     doc.save(`${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.pdf`);
-  };
-
-    // ==================== EXPORTAR A EXCEL (.xlsx) ====================
-  const exportExcel = () => {
-    if (attendees.length === 0) {
-      alert("No hay asistentes para exportar");
-      return;
-    }
-
-    const data = attendees.map((a: any) => ({
-      "Código QR": a.qrCode,
-      "Nombre": a.name,
-      "Email": a.email,
-      "Empresa": a.company || '',
-      "Teléfono": a.phone || '',
-      "Estado": a.status === 'CHECKED_IN' ? "CHECK-IN REALIZADO" : "Registrado",
-      "Fecha Check-in": a.checkedInAt ? format(new Date(a.checkedInAt), "dd/MM/yyyy HH:mm") : '',
-      "Fecha Registro": format(new Date(a.createdAt), "dd/MM/yyyy HH:mm")
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asistentes");
-
-    XLSX.writeFile(wb, `${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
   };
 
   const handleCheckIn = async (attendeeId: string) => {
@@ -162,7 +159,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     return () => scanner.clear();
   }, [scanning, attendees]);
 
-    return (
+  return (
     <div className="space-y-8">
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -183,7 +180,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botón Escanear QR - Más prominente */}
+      {/* Botón Escanear QR - Prominente */}
       <button
         onClick={() => setScanning(!scanning)}
         className="w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
@@ -203,24 +200,14 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         />
       </div>
 
-      {/* Sección de Reportes - Menos prominente */}
-      <div className="flex items-center gap-3 text-sm text-gray-400">
+      {/* Sección de Reportes - Discreta */}
+      <div className="flex items-center gap-3 text-sm text-gray-400 border-t border-zinc-800 pt-6">
         <span className="font-medium text-white">Reportes:</span>
-        <button
-          onClick={exportExcel}
-          className="flex items-center gap-2 hover:text-white transition"
-          title="Descargar Excel"
-        >
-          <Download size={18} />
-          Excel
+        <button onClick={exportExcel} className="flex items-center gap-2 hover:text-white transition" title="Descargar Excel">
+          <Download size={18} /> Excel
         </button>
-        <button
-          onClick={exportPDF}
-          className="flex items-center gap-2 hover:text-white transition"
-          title="Descargar PDF"
-        >
-          <FileText size={18} />
-          PDF
+        <button onClick={exportPDF} className="flex items-center gap-2 hover:text-white transition" title="Descargar PDF">
+          <FileText size={18} /> PDF
         </button>
       </div>
 
@@ -273,3 +260,4 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       </div>
     </div>
   );
+}

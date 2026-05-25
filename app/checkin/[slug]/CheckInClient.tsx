@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { Check, Search, Users, Clock, Download, FileText, QrCode, Share2 } from 'lucide-react';
+import { Check, Search, Users, Clock, Download, FileText, QrCode, UserCheck } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -180,25 +180,26 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botón Escanear QR */}
-      <button
-        onClick={() => setScanning(!scanning)}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
-      >
-        <QrCode size={24} />
-        {scanning ? "Detener Escáner" : "Escanear QR para Check-in"}
-      </button>
+      {/* Controles - Scanner y Búsqueda en misma fila en desktop */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <button
+          onClick={() => setScanning(!scanning)}
+          className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 py-4 rounded-3xl font-medium flex items-center justify-center gap-3 transition"
+        >
+          <QrCode size={24} />
+          {scanning ? "Detener Escáner" : "Escanear QR"}
+        </button>
 
-      {/* Barra de búsqueda */}
-      <div className="relative">
-        <Search className="absolute left-4 top-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre, email o código único..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-3xl focus:outline-none focus:border-zinc-600"
-        />
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, email o código único..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-3xl focus:outline-none focus:border-zinc-600"
+          />
+        </div>
       </div>
 
       {/* Sección de Reportes - Discreta */}
@@ -228,8 +229,9 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
       {/* Lista de Asistentes */}
       <div className="bg-zinc-900 rounded-3xl overflow-hidden">
-        <div className="p-6 border-b border-zinc-800">
+        <div className="p-6 border-b border-zinc-800 flex justify-between items-center">
           <h3 className="font-semibold">Asistentes ({filteredAttendees.length})</h3>
+          <span className="text-sm text-gray-400">Check-in Manual</span>
         </div>
 
         <div className="divide-y divide-zinc-800 max-h-[600px] overflow-auto">
@@ -242,17 +244,16 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
               <div>
                 {attendee.status === 'CHECKED_IN' ? (
-                  <div className="text-emerald-400 flex items-center gap-2">
-                    <Check className="w-5 h-5" />
-                    <span>Checked-in</span>
+                  <div className="bg-emerald-600 text-white flex items-center justify-center w-10 h-10 rounded-xl">
+                    <Check size={22} />
                   </div>
                 ) : (
                   <button
                     onClick={() => handleCheckIn(attendee.id)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition border border-emerald-600"
                     title="Hacer Check-in Manual"
                   >
-                    <Check size={22} />
+                    <UserCheck size={22} />
                   </button>
                 )}
               </div>

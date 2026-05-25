@@ -162,7 +162,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     return () => scanner.clear();
   }, [scanning, attendees]);
 
-  return (
+    return (
     <div className="space-y-8">
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -183,44 +183,45 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botones de Exportación */}
-      <div className="flex gap-4">
-        <button
-          onClick={exportExcel}
-          className="flex items-center gap-3 bg-emerald-600 text-white px-6 py-3 rounded-2xl hover:bg-emerald-700 transition"
-        >
-          <Download size={20} />
-          Exportar Excel (.xlsx)
-        </button>
+      {/* Botón Escanear QR - Más prominente */}
+      <button
+        onClick={() => setScanning(!scanning)}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
+      >
+        📷 {scanning ? "Detener Escáner" : "Escanear QR para Check-in"}
+      </button>
 
-        <button
-          onClick={exportPDF}
-          className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-2xl hover:bg-gray-100 transition"
-        >
-          <FileText size={20} />
-          Exportar PDF
-        </button>
+      {/* Barra de búsqueda */}
+      <div className="relative">
+        <Search className="absolute left-4 top-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar por nombre, email o código único..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-2xl focus:outline-none focus:border-zinc-600"
+        />
       </div>
 
-      {/* Controles */}
-      <div className="flex flex-col md:flex-row gap-4">
+      {/* Sección de Reportes - Menos prominente */}
+      <div className="flex items-center gap-3 text-sm text-gray-400">
+        <span className="font-medium text-white">Reportes:</span>
         <button
-          onClick={() => setScanning(!scanning)}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 py-4 rounded-2xl font-medium flex items-center justify-center gap-3"
+          onClick={exportExcel}
+          className="flex items-center gap-2 hover:text-white transition"
+          title="Descargar Excel"
         >
-          📷 {scanning ? "Detener Escáner" : "Escanear QR"}
+          <Download size={18} />
+          Excel
         </button>
-
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, email o código único..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-2xl focus:outline-none focus:border-zinc-600"
-          />
-        </div>
+        <button
+          onClick={exportPDF}
+          className="flex items-center gap-2 hover:text-white transition"
+          title="Descargar PDF"
+        >
+          <FileText size={18} />
+          PDF
+        </button>
       </div>
 
       {/* Escáner */}
@@ -237,7 +238,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       )}
 
-      {/* Lista */}
+      {/* Lista de Asistentes */}
       <div className="bg-zinc-900 rounded-3xl overflow-hidden">
         <div className="p-6 border-b border-zinc-800">
           <h3 className="font-semibold">Asistentes ({filteredAttendees.length})</h3>
@@ -272,4 +273,3 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       </div>
     </div>
   );
-}

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { Check, Search, Users, Clock, Download, FileText, QrCode, UserCheck } from 'lucide-react';
+import { Check, Search, Users, Clock, Download, FileText, QrCode, UserCheck, X, Share2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -136,6 +136,20 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     }
   };
 
+  const shareEvent = () => {
+    const link = `${window.location.origin}/evento/${event.slug}`;
+    const text = event.isPublic 
+      ? `Únete a mi evento: ${event.name}\n${link}`
+      : `Únete a mi evento privado: ${event.name}\nCódigo: ${event.accessCode}\n${link}`;
+
+    if (navigator.share) {
+      navigator.share({ title: event.name, text });
+    } else {
+      navigator.clipboard.writeText(text);
+      alert("✅ Enlace copiado. Puedes pegarlo en WhatsApp, etc.");
+    }
+  };
+
   // Escáner QR
   useEffect(() => {
     if (!scanning) return;
@@ -173,7 +187,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   return (
     <div className="space-y-8">
-      {/* Estadísticas Mejoradas */}
+      {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-zinc-900 p-6 rounded-3xl">
           <Users className="w-8 h-8 mb-3 text-blue-400" />
@@ -186,8 +200,8 @@ export default function CheckInClient({ event }: CheckInClientProps) {
           <p className="text-gray-400">Check-in realizados</p>
         </div>
         <div className="bg-zinc-900 p-6 rounded-3xl">
-          <Clock className="w-8 h-8 mb-3 text-amber-400" />
-          <p className="text-4xl font-bold text-amber-400">{notCheckedInCount}</p>
+          <X className="w-8 h-8 mb-3 text-red-400" />
+          <p className="text-4xl font-bold text-red-400">{notCheckedInCount}</p>
           <p className="text-gray-400">Sin Check-in</p>
         </div>
         <div className="bg-zinc-900 p-6 rounded-3xl">
@@ -197,7 +211,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botón Escanear QR */}
+      {/* Botón Escanear QR - Más grande */}
       <button
         onClick={() => setScanning(!scanning)}
         disabled={isEventFinished}
@@ -219,7 +233,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         />
       </div>
 
-      {/* Reportes */}
+      {/* Sección de Reportes */}
       <div className="flex items-center gap-4 text-sm text-gray-400 border-t border-zinc-800 pt-6">
         <span className="font-medium text-white whitespace-nowrap">Reportes:</span>
         <button onClick={exportExcel} className="flex items-center gap-2 hover:text-white transition" title="Descargar Excel">

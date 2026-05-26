@@ -182,16 +182,15 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
       {/* Controles - Scanner y Búsqueda en misma fila en desktop */}
       <div className="flex flex-col md:flex-row gap-4">
-             {/* Botón Escanear QR - Más grande */}
-      <button
-        onClick={() => setScanning(!scanning)}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 py-6 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
-      >
-        <QrCode size={28} />
-        {scanning ? "Detener Escáner" : "Escanear QR"}
-      </button>
+        <button
+          onClick={() => setScanning(!scanning)}
+          className="md:w-[40%] bg-emerald-600 hover:bg-emerald-700 py-4 rounded-3xl font-medium flex items-center justify-center gap-3 transition text-base"
+        >
+          <QrCode size={24} />
+          {scanning ? "Detener Escáner" : "Escanear QR"}
+        </button>
 
-        <div className="flex-1 relative">
+        <div className="md:w-[60%] relative">
           <Search className="absolute left-4 top-4 text-gray-400" />
           <input
             type="text"

@@ -31,7 +31,7 @@ export async function sendAttendeeConfirmation(attendee: any, event: any) {
     const link = `${process.env.NEXT_PUBLIC_APP_URL}/evento/${event.slug}`;
 
     await resend.emails.send({
-      from: 'EventFlow <onboarding@resend.dev>',
+      from: 'EventFlow <gonzalo.cg.23@gmail.com>',
       to: attendee.email,
       subject: `✅ Confirmación de registro - ${event.name}`,
       html: `

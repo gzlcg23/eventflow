@@ -42,12 +42,55 @@ export async function PUT(
       },
     });
 
-    console.log(`✅ Evento actualizado: ${updatedEvent.name} | Público: ${isPublic}`);
-
     return NextResponse.json({ success: true, event: updatedEvent });
 
   } catch (error: any) {
     console.error("Error al actualizar evento:", error);
     return NextResponse.json({ error: "Error al actualizar el evento" }, { status: 500 });
+  }
+}
+
+// ==================== ELIMINAR EVENTO ====================
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const clerkUser = await currentUser();
+
+    if (!clerkUser) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { userId: true, name: true }
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+    }
+
+    // Verificar que el usuario sea el dueño del evento
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkUser.id }
+    });
+
+    if (!user || user.id !== event.userId) {
+      return NextResponse.json({ error: "No tienes permiso para eliminar este evento" }, { status: 403 });
+    }
+
+    await prisma.event.delete({
+      where: { id }
+    });
+
+    console.log(`🗑️ Evento eliminado: ${event.name}`);
+
+    return NextResponse.json({ success: true });
+
+  } catch (error: any) {
+    console.error("Error al eliminar evento:", error);
+    return NextResponse.json({ error: "Error al eliminar el evento" }, { status: 500 });
   }
 }

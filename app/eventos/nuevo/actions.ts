@@ -22,9 +22,7 @@ export async function createEvent(formData: FormData) {
         error: "Has alcanzado el límite de 5 eventos. Elimina uno para crear otro." 
       };
     }
-  try {
-    const user = await getOrCreateUser();
-    if (!user) redirect("/sign-in");
+    // =======================================
 
     const name = (formData.get("name") as string).trim();
     const description = (formData.get("description") as string || "").trim();
@@ -87,7 +85,6 @@ export async function createEvent(formData: FormData) {
     revalidatePath("/eventos");
     revalidatePath("/dashboard");
 
-    // ← Respuesta mejorada para la nueva pantalla de éxito
     return { 
       success: true, 
       event,

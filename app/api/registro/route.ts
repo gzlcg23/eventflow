@@ -43,8 +43,10 @@ export async function POST(request: Request) {
     const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkin/${attendee.qrCode}`;
     const qrCodeBuffer = await QRCode.toBuffer(qrUrl, { width: 400 });
 
-           // ==================== ENVÍO DE EMAIL CON QR INCORPORADO ====================
+               // ==================== ENVÍO DE EMAIL CON QR (VERSIÓN MÁS CONFIABLE) ====================
     try {
+      const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
+
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
         to: email,
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
 
               <div style="text-align: center; margin: 30px 0;">
                 <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el evento:</p>
-                <img src="cid:qr-code" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
+                <img src="${qrCodeDataUrl}" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
               </div>
 
               <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
@@ -79,22 +81,16 @@ export async function POST(request: Request) {
                 </p>
               </div>
 
+
               <p style="text-align: center; color: #64748b; margin-top: 30px; font-size: 14px;">
                 Guarda este correo. Lo necesitarás el día del evento.
               </p>
             </div>
           </div>
         `,
-        attachments: [
-          {
-            filename: `QR-${attendee.qrCode}.png`,
-            content: qrCodeBuffer,
-            cid: 'qr-code'        // ← Debe coincidir exactamente con "cid:qr-code"
-          }
-        ]
       });
 
-      console.log(`📧 Email con QR incrustado enviado a ${email}`);
+      console.log(`📧 Email con QR enviado a ${email}`);
     } catch (emailError) {
       console.error("Error enviando email:", emailError);
     }

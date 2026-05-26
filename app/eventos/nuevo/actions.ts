@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { sendEventCreatedEmail } from "@/lib/email";   // ← Importar la función
+import { sendEventCreatedEmail } from "@/lib/email";
 
 export async function createEvent(formData: FormData) {
   try {
@@ -45,10 +45,20 @@ export async function createEvent(formData: FormData) {
       return { success: false, error: "Nombre y fecha son obligatorios" };
     }
 
-    // Generar número único de evento
+    // ==================== GENERACIÓN SEGURA DE eventNumber ====================
     const year = new Date().getFullYear();
-    const count = await prisma.event.count();
-    const eventNumber = `EV-${year}-${String(count + 1000).padStart(4, '0')}`;
+    let eventNumber: string;
+    let counter = 1000;
+    let exists = true;
+
+    while (exists) {
+      eventNumber = `EV-${year}-${String(counter).padStart(4, '0')}`;
+      exists = await prisma.event.findUnique({
+        where: { eventNumber }
+      }) !== null;
+      counter++;
+    }
+    // =====================================================================
 
     let slug = name
       .toLowerCase()
@@ -57,11 +67,11 @@ export async function createEvent(formData: FormData) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    let counter = 1;
+    let slugCounter = 1;
     let finalSlug = slug;
     while (await prisma.event.findUnique({ where: { slug: finalSlug } })) {
-      finalSlug = `${slug}-${counter}`;
-      counter++;
+      finalSlug = `${slug}-${slugCounter}`;
+      slugCounter++;
     }
 
     const event = await prisma.event.create({
@@ -83,7 +93,7 @@ export async function createEvent(formData: FormData) {
 
     console.log(`✅ Evento creado: ${event.name} | Número: ${eventNumber}`);
 
-        // === ENVIAR CORREO AL ORGANIZADOR ===
+    // === ENVIAR CORREO AL ORGANIZADOR ===
     const organizer = await prisma.user.findUnique({
       where: { id: user.id },
       select: { email: true }

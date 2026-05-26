@@ -37,7 +37,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-10">
-        <h1 className="text-5xl font-bold mb-2">Dashboard</h1>
+        <h1 className="text-5xl font-bold mb-2">Estadísticas</h1>
         <p className="text-gray-500 text-xl">Resumen general de tus eventos</p>
       </div>
 

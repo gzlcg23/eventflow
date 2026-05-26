@@ -349,21 +349,15 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                       {event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—'}
                     </td>
                     <td className="p-6">
-  <button
-    onClick={() => toggleActive(event.id, event.isActive)}
-    className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
-      event.isActive 
-        ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
-        : 'bg-red-100 hover:bg-red-200 text-red-700'
-    }`}
-  >
-    {event.isActive ? (
-      <span className="font-semibold">ON</span>
-    ) : (
-      <span className="font-semibold">OFF</span>
-    )}
-  </button>
-</td>
+                      <button
+                        onClick={() => toggleActive(event.id, event.isActive)}
+                        className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition ${event.isActive 
+                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
+                          : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                      >
+                        {event.isActive ? <X size={18} /> : <Check size={18} />}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}

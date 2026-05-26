@@ -226,7 +226,7 @@ export default function DashboardClient({
             <XAxis type="number" />
             <YAxis type="category" dataKey="name" width={150} />
             <Tooltip />
-            <Bar dataKey="registrados" fill="#e5e7eb" name="Registrados" />
+            <Bar dataKey="registrados" fill="#8b5cf6" name="Registrados" />
             <Bar dataKey="checkins" fill="#10b981" name="Check-ins" />
           </BarChart>
         </ResponsiveContainer>

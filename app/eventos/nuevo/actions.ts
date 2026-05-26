@@ -83,14 +83,18 @@ export async function createEvent(formData: FormData) {
 
     console.log(`✅ Evento creado: ${event.name} | Número: ${eventNumber}`);
 
-    // === ENVIAR CORREO AL ORGANIZADOR ===
+        // === ENVIAR CORREO AL ORGANIZADOR ===
     const organizer = await prisma.user.findUnique({
       where: { id: user.id },
       select: { email: true }
     });
 
     if (organizer?.email) {
+      console.log(`Intentando enviar correo a: ${organizer.email}`);
       await sendEventCreatedEmail(organizer.email, event);
+      console.log("Correo enviado (o intentado)");
+    } else {
+      console.log("No se encontró email del organizador");
     }
     // =======================================
 

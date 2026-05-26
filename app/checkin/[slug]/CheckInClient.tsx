@@ -190,15 +190,17 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       {/* Título del Evento + Botón Compartir */}
       <div className="flex justify-between items-start">
 
-        {/* Botón Compartir al lado del nombre */}
-        <button
-          onClick={shareEvent}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-black px-5 py-3 rounded-2xl hover:bg-gray-50 transition"
-          title="Compartir evento"
-        >
-          <Share2 size={20} />
-          Compartir
-        </button>
+        {/* Botón Compartir - Solo visible si el evento NO ha finalizado */}
+        {!isEventFinished && (
+          <button
+            onClick={shareEvent}
+            className="flex items-center gap-2 bg-white border border-gray-300 text-black px-5 py-3 rounded-2xl hover:bg-gray-50 transition"
+            title="Compartir evento"
+          >
+            <Share2 size={20} />
+            Compartir
+          </button>
+        )}
       </div>
 
       {/* Estadísticas */}

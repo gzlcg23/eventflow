@@ -11,6 +11,21 @@ export async function createEvent(formData: FormData) {
     const user = await getOrCreateUser();
     if (!user) redirect("/sign-in");
 
+    // === LIMITAR A 5 EVENTOS POR USUARIO ===
+    const existingEventsCount = await prisma.event.count({
+      where: { userId: user.id }
+    });
+
+    if (existingEventsCount >= 5) {
+      return { 
+        success: false, 
+        error: "Has alcanzado el límite de 5 eventos. Elimina uno para crear otro." 
+      };
+    }
+  try {
+    const user = await getOrCreateUser();
+    if (!user) redirect("/sign-in");
+
     const name = (formData.get("name") as string).trim();
     const description = (formData.get("description") as string || "").trim();
     const dateStr = formData.get("date") as string;

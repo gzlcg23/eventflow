@@ -1,8 +1,4 @@
 // app/api/cron/archive-events/route.ts
-// Cambia esto:
-import { prisma } from "@/lib/prisma";
-
-// Por esto (subiendo los niveles de carpeta correctos hasta tu carpeta lib):
 import { prisma } from "../../../../lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -17,8 +13,7 @@ export async function GET(request: Request) {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    // 2. OPTIMIZACIÓN: updateMany en lugar de un bucle 'for'
-    // Cambiamos el estado de todos los eventos que cumplan la condición en una sola query
+    // 2. OPTIMIZACIÓN: updateMany en una sola query
     const updateResult = await prisma.event.updateMany({
       where: {
         isActive: false,

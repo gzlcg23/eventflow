@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendEventCreatedEmail(to: string, event: any) {
   try {
     await resend.emails.send({
-      from: 'EventFlow <no-reply@eventflow.com.mx>',
+      from: 'EventFlow <no-reply@redspace.mx>',   // ← Usando tu dominio verificado
       to,
       subject: `✅ Evento creado: ${event.name}`,
       html: `
@@ -31,7 +31,7 @@ export async function sendAttendeeConfirmation(attendee: any, event: any) {
     const link = `${process.env.NEXT_PUBLIC_APP_URL}/evento/${event.slug}`;
 
     await resend.emails.send({
-      from: 'EventFlow <gonzalo.cg.23@gmail.com>',
+      from: 'EventFlow <no-reply@redspace.mx>',   // ← Usando tu dominio verificado
       to: attendee.email,
       subject: `✅ Confirmación de registro - ${event.name}`,
       html: `

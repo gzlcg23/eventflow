@@ -15,14 +15,9 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
 
-    const itemsPerPage = 10;
+  // Paginación
+  const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-  const currentEvents = filteredEvents.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   // Modal de razón
   const [showModal, setShowModal] = useState(false);
@@ -63,6 +58,13 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
 
     return result;
   }, [initialEvents, searchTerm, statusFilter, periodFilter]);
+
+  // Paginación
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+  const currentEvents = filteredEvents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const activeEvents = filteredEvents.filter(e => e.isActive);
   const totalIncome = activeEvents.length * COSTO_POR_EVENTO;
@@ -134,7 +136,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     doc.save(`Reporte_Financiero_${format(today, "yyyy-MM-dd")}.pdf`);
   };
 
-  // ==================== MODAL Y OTRAS FUNCIONES (mantengo las tuyas) ====================
   const handleDeactivate = (eventId: string) => {
     setSelectedEventId(eventId);
     setDeactivationReason("");
@@ -217,7 +218,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       )}
 
       {/* Reporte Financiero */}
-            {/* Reporte Financiero */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-8">
         <div className="flex justify-between items-start">
           <div>
@@ -262,8 +262,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
         </div>
       </div>
       
-      {/* Tabla de Eventos */}
-            {/* Filtros por Período */}
+      {/* Filtros por Período */}
       <div className="bg-white rounded-3xl shadow border p-6">
         <div className="flex flex-wrap items-center gap-4">
           <h3 className="font-medium text-gray-700">Filtrar por fecha del evento:</h3>
@@ -291,7 +290,8 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
           </div>
         </div>
       </div>
-            {/* Tabla de Eventos con Paginación */}
+
+      {/* Tabla de Eventos con Paginación */}
       <div className="bg-white rounded-3xl shadow border overflow-hidden">
         <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
           <h2 className="text-2xl font-semibold">Todos los Eventos ({filteredEvents.length})</h2>
@@ -403,5 +403,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
           </div>
         )}
       </div>
+    </div>
   );
 }

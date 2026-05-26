@@ -7,7 +7,7 @@ import { Check, Search, Users, Clock, Download, FileText, QrCode, UserCheck } fr
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 interface Attendee {
   id: string;
@@ -39,6 +39,11 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   const checkedInCount = attendees.filter(a => a.status === 'CHECKED_IN').length;
   const totalAttendees = attendees.length;
+  const notCheckedInCount = totalAttendees - checkedInCount;
+
+  // Verificar si el evento ya finalizó (1 día después)
+  const eventDate = new Date(event.date);
+  const isEventFinished = differenceInDays(new Date(), eventDate) > 1;
 
   // ==================== EXPORTAR EXCEL ====================
   const exportExcel = () => {
@@ -76,7 +81,9 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     
     doc.setFontSize(11);
     doc.text(`Fecha: ${new Date(event.date).toLocaleDateString('es-MX')}`, 14, 30);
-    doc.text(`Total asistentes: ${attendees.length}`, 14, 38);
+    doc.text(`Total registrados: ${totalAttendees}`, 14, 38);
+    doc.text(`Check-in realizados: ${checkedInCount} (${Math.round((checkedInCount / totalAttendees) * 100) || 0}%)`, 14, 46);
+    doc.text(`Sin Check-in: ${notCheckedInCount}`, 14, 54);
 
     const tableColumn = ['Nombre', 'Email', 'Empresa', 'Código QR', 'Estado', 'Check-in'];
     const tableRows = attendees.map(a => [
@@ -91,7 +98,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     autoTable.default(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 48,
+      startY: 65,
       styles: { fontSize: 9 },
       headStyles: { fillColor: [16, 185, 129] }
     });
@@ -100,6 +107,11 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   };
 
   const handleCheckIn = async (attendeeId: string) => {
+    if (isEventFinished) {
+      setMessage({ type: 'error', text: "Este evento ya finalizó. No se pueden hacer más check-ins." });
+      return;
+    }
+
     try {
       const res = await fetch('/api/checkin', {
         method: 'POST',
@@ -161,8 +173,8 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   return (
     <div className="space-y-8">
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Estadísticas Mejoradas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-zinc-900 p-6 rounded-3xl">
           <Users className="w-8 h-8 mb-3 text-blue-400" />
           <p className="text-4xl font-bold">{totalAttendees}</p>
@@ -175,34 +187,39 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
         <div className="bg-zinc-900 p-6 rounded-3xl">
           <Clock className="w-8 h-8 mb-3 text-amber-400" />
+          <p className="text-4xl font-bold text-amber-400">{notCheckedInCount}</p>
+          <p className="text-gray-400">Sin Check-in</p>
+        </div>
+        <div className="bg-zinc-900 p-6 rounded-3xl">
+          <Clock className="w-8 h-8 mb-3 text-amber-400" />
           <p className="text-4xl font-bold">{Math.round((checkedInCount / totalAttendees) * 100) || 0}%</p>
           <p className="text-gray-400">Asistencia</p>
         </div>
       </div>
 
-      {/* Controles - Scanner y Búsqueda en misma fila en desktop */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <button
-          onClick={() => setScanning(!scanning)}
-          className="md:w-[40%] bg-emerald-600 hover:bg-emerald-700 py-4 rounded-3xl font-medium flex items-center justify-center gap-3 transition text-base"
-        >
-          <QrCode size={24} />
-          {scanning ? "Detener Escáner" : "Escanear QR"}
-        </button>
+      {/* Botón Escanear QR */}
+      <button
+        onClick={() => setScanning(!scanning)}
+        disabled={isEventFinished}
+        className={`w-full py-5 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition ${isEventFinished ? 'bg-gray-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+      >
+        <QrCode size={26} />
+        {isEventFinished ? "Evento Finalizado - No se puede escanear" : (scanning ? "Detener Escáner" : "Escanear QR")}
+      </button>
 
-        <div className="md:w-[60%] relative">
-          <Search className="absolute left-4 top-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, email o código único..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-3xl focus:outline-none focus:border-zinc-600"
-          />
-        </div>
+      {/* Barra de búsqueda */}
+      <div className="relative">
+        <Search className="absolute left-4 top-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar por nombre, email o código único..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-zinc-900 border border-zinc-700 pl-12 py-4 rounded-3xl focus:outline-none focus:border-zinc-600"
+        />
       </div>
 
-      {/* Sección de Reportes - Discreta */}
+      {/* Reportes */}
       <div className="flex items-center gap-4 text-sm text-gray-400 border-t border-zinc-800 pt-6">
         <span className="font-medium text-white whitespace-nowrap">Reportes:</span>
         <button onClick={exportExcel} className="flex items-center gap-2 hover:text-white transition" title="Descargar Excel">
@@ -234,7 +251,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
           <span className="text-sm text-gray-400">Check-in Manual</span>
         </div>
 
-                <div className="divide-y divide-zinc-800 max-h-[600px] overflow-auto">
+        <div className="divide-y divide-zinc-800 max-h-[600px] overflow-auto">
           {filteredAttendees.map((attendee) => (
             <div key={attendee.id} className="p-6 flex items-center justify-between hover:bg-zinc-800/50">
               <div>
@@ -250,7 +267,8 @@ export default function CheckInClient({ event }: CheckInClientProps) {
                 ) : (
                   <button
                     onClick={() => handleCheckIn(attendee.id)}
-                    className="flex items-center justify-center w-11 h-11 text-amber-500 hover:bg-amber-500/10 rounded-xl transition"
+                    disabled={isEventFinished}
+                    className={`flex items-center justify-center w-11 h-11 rounded-xl transition ${isEventFinished ? 'text-gray-500 cursor-not-allowed' : 'text-amber-500 hover:bg-amber-500/10'}`}
                     title="Hacer Check-in Manual"
                   >
                     <UserCheck size={26} />

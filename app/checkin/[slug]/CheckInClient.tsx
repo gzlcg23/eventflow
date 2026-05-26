@@ -189,10 +189,6 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     <div className="space-y-8">
       {/* Título del Evento + Botón Compartir */}
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">{event.name}</h1>
-          <p className="text-gray-400 mt-1">{event.eventNumber}</p>
-        </div>
 
         {/* Botón Compartir al lado del nombre */}
         <button

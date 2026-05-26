@@ -9,6 +9,7 @@ export default function NuevoEventoPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
+  const [isPublic, setIsPublic] = useState(true);   // ← Estado agregado
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -16,7 +17,7 @@ export default function NuevoEventoPage() {
     const result = await createEvent(formData);
 
     if (result.success) {
-      setSuccessData(result.event);   // Guardamos el evento completo
+      setSuccessData(result.event);
     } else {
       alert("Error: " + result.error);
     }
@@ -24,21 +25,17 @@ export default function NuevoEventoPage() {
     setIsLoading(false);
   };
 
-  // Pantalla de éxito mejorada
+  // Pantalla de éxito
   if (successData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-3xl shadow-xl max-w-lg w-full p-10 text-center">
-        
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Evento Creado con éxito</h1>
           <p className="text-xl font-semibold text-amber-600 mb-8">{successData.name}</p>
 
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 mb-8 text-left">
-            
-            
             <p className="text-amber-700 mb-6 leading-relaxed">
-              <br />
-              Para que tu evento pueda ser activado no olvides mandar en tu comprobante de pago tu nombre completo y tu <b>número de referencia de tu evento</b> asignado aquí abajo:
+              Para que tu evento pueda ser activado no olvides mandar en tu comprobante de pago tu nombre completo y tu <b>número de referencia</b>:
             </p>
             
             <div className="bg-white rounded-xl p-5 border border-amber-200 text-center">
@@ -75,7 +72,6 @@ export default function NuevoEventoPage() {
       <h1 className="text-3xl font-bold mb-8">Crear Nuevo Evento</h1>
 
       <form action={handleSubmit} className="space-y-6">
-        {/* Aquí va tu formulario actual */}
         <div>
           <label className="block text-sm font-medium mb-2">Nombre del Evento *</label>
           <input name="name" type="text" required className="w-full px-4 py-3 border rounded-2xl" />
@@ -101,19 +97,47 @@ export default function NuevoEventoPage() {
           <input name="locationUrl" type="url" className="w-full px-4 py-3 border rounded-2xl" />
         </div>
 
+        {/* Tipo de Evento */}
         <div>
           <label className="block text-sm font-medium mb-3">Tipo de Evento</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="isPublic" value="true" defaultChecked />
+          <div className="flex gap-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="radio" 
+                name="isPublic" 
+                value="true" 
+                checked={isPublic}
+                onChange={() => setIsPublic(true)}
+              />
               Público
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="isPublic" value="false" />
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="radio" 
+                name="isPublic" 
+                value="false" 
+                checked={!isPublic}
+                onChange={() => setIsPublic(false)}
+              />
               Privado
             </label>
           </div>
         </div>
+
+        {/* Campo Código de Acceso - Solo para eventos privados */}
+        {!isPublic && (
+          <div>
+            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres) *</label>
+            <input 
+              name="accessCode" 
+              type="text" 
+              required 
+              minLength={4}
+              className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
+              placeholder="EJEMPLO2026"
+            />
+          </div>
+        )}
 
         <button
           type="submit"

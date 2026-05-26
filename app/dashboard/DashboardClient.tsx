@@ -182,17 +182,14 @@ export default function DashboardClient({
       </div>*/}
 
 
-      {/* Botones de Exportación */}
-            {/* Botones de Exportación */}
-      <div className="flex gap-4 justify-end">
-      {/*  <button onClick={exportAllCSV} className="flex items-center gap-3 bg-white border px-6 py-3 rounded-2xl hover:bg-gray-50 transition">
-          <Download size={20} /> Exportar CSV General
-        </button> */}
-        <button onClick={exportAllPDF} className="flex items-center gap-3 bg-white border px-6 py-3 rounded-2xl hover:bg-gray-50 transition">
-          <FileText size={20} /> Exportar PDF General
+      {/* Botones de Exportación - Estilo discreto */}
+      <div className="flex items-center gap-4 text-sm text-gray-400">
+        <span className="font-medium text-black">Reportes:</span>
+        <button onClick={exportAllPDF} className="flex items-center gap-2 hover:text-black transition" title="Exportar PDF">
+          <FileText size={18} /> PDF
         </button>
-        <button onClick={exportExcel} className="flex items-center gap-3 bg-emerald-600 text-white px-6 py-3 rounded-2xl hover:bg-emerald-700 transition">
-          <Download size={20} /> Exportar Excel (.xlsx)
+        <button onClick={exportExcel} className="flex items-center gap-2 hover:text-black transition" title="Exportar Excel">
+          <Download size={18} /> Excel
         </button>
       </div>
 
@@ -220,87 +217,19 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white border rounded-3xl p-8">
-          <h3 className="text-xl font-semibold mb-6">Asistencia por Evento</h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="registrados" fill="#e5e7eb" name="Registrados" />
-              <Bar dataKey="checkins" fill="#10b981" name="Check-ins" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white border rounded-3xl p-8">
-          <h3 className="text-xl font-semibold mb-6">Distribución General</h3>
-          <div className="flex justify-center">
-            <ResponsiveContainer width={300} height={300}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={120} dataKey="value">
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-8 mt-6">
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-emerald-500 rounded"></div>
-              <span>Con Check-in ({totalCheckedIn})</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-gray-400 rounded"></div>
-              <span>Sin Check-in ({totalAttendees - totalCheckedIn})</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Lista de Eventos */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-6">Tus Eventos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => {
-            const total = event.attendees?.length || 0;
-            const checkedIn = event.attendees?.filter((a: any) => a.status === 'CHECKED_IN').length || 0;
-            const rate = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
-
-            return (
-              <Link 
-                key={event.id} 
-                href={`/checkin/${event.slug}`}
-                className="bg-white border rounded-3xl p-6 hover:shadow-xl transition group"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-xl group-hover:text-blue-600 transition">{event.name}</h3>
-                    <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
-                  </div>
-                  
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${event.isActive 
-                    ? 'bg-emerald-100 text-emerald-700' 
-                    : 'bg-red-100 text-red-700'}`}>
-                    {event.isActive ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4">{event.location}</p>
-                
-                <div className="flex justify-between text-sm">
-                  <span>{total} registrados</span>
-                  <span className="text-emerald-600 font-medium">{checkedIn} presentes ({rate}%)</span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+{/* Gráfica Horizontal */}
+      <div className="bg-white border rounded-3xl p-8">
+        <h3 className="text-xl font-semibold mb-6">Asistencia por Evento</h3>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={barData} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis type="category" dataKey="name" width={150} />
+            <Tooltip />
+            <Bar dataKey="registrados" fill="#e5e7eb" name="Registrados" />
+            <Bar dataKey="checkins" fill="#10b981" name="Check-ins" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

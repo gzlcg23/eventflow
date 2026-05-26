@@ -32,7 +32,7 @@ export default function Navbar() {
           {isSignedIn && (
             <div className="hidden md:flex items-center gap-8">
               <Link href="/eventos" className="hover:text-black transition font-medium">Mis Eventos</Link>
-              <Link href="/dashboard" className="hover:text-black transition font-medium">Dashboard</Link>
+              <Link href="/dashboard" className="hover:text-black transition font-medium">Estadísticas</Link>
             </div>
           )}
         </div>

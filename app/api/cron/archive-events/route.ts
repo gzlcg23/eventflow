@@ -1,5 +1,9 @@
 // app/api/cron/archive-events/route.ts
+// Cambia esto:
 import { prisma } from "@/lib/prisma";
+
+// Por esto (subiendo los niveles de carpeta correctos hasta tu carpeta lib):
+import { prisma } from "../../../../lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

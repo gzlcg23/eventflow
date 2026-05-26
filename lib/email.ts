@@ -11,7 +11,7 @@ export async function sendEventCreatedEmail(to: string, event: any) {
     await resend.emails.send({
       from: 'EventFlow <no-reply@redspace.mx>',
       to,
-      subject: `✅ Evento creado: ${event.name}`,
+      subject: `Evento creado: ${event.name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           

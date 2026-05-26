@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { sendEventCreatedEmail } from "@/lib/email";   // ← Importar la función
 
 export async function createEvent(formData: FormData) {
   try {
@@ -81,6 +82,17 @@ export async function createEvent(formData: FormData) {
     });
 
     console.log(`✅ Evento creado: ${event.name} | Número: ${eventNumber}`);
+
+    // === ENVIAR CORREO AL ORGANIZADOR ===
+    const organizer = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { email: true }
+    });
+
+    if (organizer?.email) {
+      await sendEventCreatedEmail(organizer.email, event);
+    }
+    // =======================================
 
     revalidatePath("/eventos");
     revalidatePath("/dashboard");

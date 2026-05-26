@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkin/${attendee.qrCode}`;
     const qrCodeBuffer = await QRCode.toBuffer(qrUrl, { width: 400 });
 
-        // ==================== ENVÍO DE EMAIL CON ADJUNTO (DISEÑO PROFESIONAL) ====================
+           // ==================== ENVÍO DE EMAIL CON QR INCORPORADO ====================
     try {
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
         subject: `✅ Registro Confirmado - ${event.name}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
-            
             <div style="background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
               
               <div style="text-align: center; margin-bottom: 30px;">
@@ -63,19 +62,15 @@ export async function POST(request: Request) {
                 <h2 style="color: #166534; margin: 0 0 8px 0;">${event.name}</h2>
                 <p style="color: #4ade80; font-weight: bold; margin: 0;">
                   ${new Date(event.date).toLocaleDateString('es-MX', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
                   })}
                 </p>
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
                 <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el evento:</p>
-                <img src="cid:qr-code" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="QR Code"/>
+                <img src="cid:qr-code" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
               </div>
 
               <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
@@ -95,22 +90,18 @@ export async function POST(request: Request) {
                 Guarda este correo. Lo necesitarás el día del evento.
               </p>
             </div>
-
-            <div style="text-align: center; margin-top: 25px; color: #94a3b8; font-size: 13px;">
-              <p>Gracias por usar <strong>EventFlow</strong></p>
-            </div>
           </div>
         `,
         attachments: [
           {
             filename: `QR-${attendee.qrCode}.png`,
             content: qrCodeBuffer,
-            cid: 'qr-code'   // ← Esto permite mostrar la imagen dentro del email
+            cid: 'qr-code'        // ← Debe coincidir exactamente con "cid:qr-code"
           }
         ]
       });
 
-      console.log(`📧 Email profesional enviado a ${email}`);
+      console.log(`📧 Email con QR incrustado enviado a ${email}`);
     } catch (emailError) {
       console.error("Error enviando email:", emailError);
     }

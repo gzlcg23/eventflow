@@ -96,7 +96,7 @@ export default function Navbar() {
                     Mis Eventos
                   </Link>
                   <Link href="/dashboard" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
-                    Dashboard
+                    Estadísticas
                   </Link>
                   <div className="pt-6">
                     <UserButton afterSignOutUrl="/" />

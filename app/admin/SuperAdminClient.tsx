@@ -15,6 +15,15 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
 
+    const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+  const currentEvents = filteredEvents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Modal de razón
   const [showModal, setShowModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -282,31 +291,13 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
           </div>
         </div>
       </div>
+            {/* Tabla de Eventos con Paginación */}
       <div className="bg-white rounded-3xl shadow border overflow-hidden">
         <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
           <h2 className="text-2xl font-semibold">Todos los Eventos ({filteredEvents.length})</h2>
-          
-          <div className="flex gap-4">
-            <div className="relative w-80">
-              <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border rounded-2xl text-sm"
-              />
-            </div>
-            {/* Filtros de estado */}
-            <div className="flex border rounded-2xl overflow-hidden text-sm">
-              <button onClick={() => setStatusFilter("all")} className={`px-5 py-2.5 ${statusFilter === 'all' ? 'bg-black text-white' : 'bg-white'}`}>Todos</button>
-              <button onClick={() => setStatusFilter("active")} className={`px-5 py-2.5 ${statusFilter === 'active' ? 'bg-black text-white' : 'bg-white'}`}>Activos</button>
-              <button onClick={() => setStatusFilter("inactive")} className={`px-5 py-2.5 ${statusFilter === 'inactive' ? 'bg-black text-white' : 'bg-white'}`}>Inactivos</button>
-            </div>
-          </div>
         </div>
 
-                <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
@@ -321,7 +312,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredEvents.map((event) => {
+              {currentEvents.map((event) => {
                 const eventDate = new Date(event.date);
                 const daysToEvent = differenceInDays(eventDate, new Date());
                 const isOverdue = !event.isActive && daysToEvent < 0;
@@ -349,28 +340,68 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                       {event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—'}
                     </td>
                     <td className="p-6">
-                    <button
-                      onClick={() => toggleActive(event.id, event.isActive)}
-                      className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
-                        event.isActive 
-                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
-                          : 'bg-red-100 hover:bg-red-200 text-red-700'
-                      }`}
-                    >
-                      {event.isActive ? (
-                        <span className="font-semibold">ON</span>
-                      ) : (
-                        <span className="font-semibold">OFF</span>
-                      )}
-                    </button>
-                  </td>
+                      <button
+                        onClick={() => toggleActive(event.id, event.isActive)}
+                        className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
+                          event.isActive 
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
+                            : 'bg-red-100 hover:bg-red-200 text-red-700'
+                        }`}
+                      >
+                        {event.isActive ? (
+                          <span className="font-semibold">ON</span>
+                        ) : (
+                          <span className="font-semibold">OFF</span>
+                        )}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="p-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+            <div className="text-sm text-gray-500">
+              Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredEvents.length)} de {filteredEvents.length} eventos
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition"
+              >
+                Anterior
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+                    currentPage === page 
+                      ? 'bg-black text-white' 
+                      : 'border hover:bg-white'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
   );
 }

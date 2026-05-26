@@ -136,17 +136,17 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     }
   };
 
-  const shareEvent = () => {
+    const shareEvent = () => {
     const link = `${window.location.origin}/evento/${event.slug}`;
     const text = event.isPublic 
       ? `Únete a mi evento: ${event.name}\n${link}`
-      : `Únete a mi evento privado: ${event.name}\nCódigo: ${event.accessCode}\n${link}`;
+      : `Únete a mi evento privado: ${event.name}\nCódigo de acceso: ${event.accessCode}\n${link}`;
 
     if (navigator.share) {
       navigator.share({ title: event.name, text });
     } else {
       navigator.clipboard.writeText(text);
-      alert("✅ Enlace copiado. Puedes pegarlo en WhatsApp, etc.");
+      alert("✅ Enlace copiado.");
     }
   };
 
@@ -187,6 +187,24 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   return (
     <div className="space-y-8">
+      {/* Título del Evento + Botón Compartir */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">{event.name}</h1>
+          <p className="text-gray-400 mt-1">{event.eventNumber}</p>
+        </div>
+
+        {/* Botón Compartir al lado del nombre */}
+        <button
+          onClick={shareEvent}
+          className="flex items-center gap-2 bg-white border border-gray-300 text-black px-5 py-3 rounded-2xl hover:bg-gray-50 transition"
+          title="Compartir evento"
+        >
+          <Share2 size={20} />
+          Compartir
+        </button>
+      </div>
+
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-zinc-900 p-6 rounded-3xl">

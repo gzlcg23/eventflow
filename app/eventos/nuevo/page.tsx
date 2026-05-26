@@ -29,23 +29,20 @@ export default function NuevoEventoPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-3xl shadow-xl max-w-lg w-full p-10 text-center">
-          <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
-            <span className="text-5xl">⚠️</span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Evento Creado</h1>
+        
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Evento Creado con éxito</h1>
           <p className="text-xl font-semibold text-amber-600 mb-8">{successData.name}</p>
 
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 mb-8 text-left">
-            <p className="text-amber-800 font-medium text-lg mb-4">Evento no activo</p>
+            
             
             <p className="text-amber-700 mb-6 leading-relaxed">
-              Este evento aún no ha sido activado.<br />
-              No olvides mandar tu número de referencia del evento y tu nombre en el comprobante de pago.
+              Recuerda que este evento aún no ha sido activado.<br />
+              Para que tu evento pueda ser activado no olvides mandar tu nombre completo y tu <b># de referencia de tu evento</b> asignado aquí abajo:
             </p>
             
             <div className="bg-white rounded-xl p-5 border border-amber-200 text-center">
-              <p className="text-sm text-gray-500 mb-1">Número de referencia:</p>
+              <p className="text-sm text-gray-500 mb-1"># de referencia de tu evento:</p>
               <p className="font-mono text-3xl font-bold text-amber-900 tracking-widest">
                 {successData.eventNumber}
               </p>

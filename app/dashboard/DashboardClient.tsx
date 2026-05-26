@@ -159,9 +159,9 @@ export default function DashboardClient({
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
+    XLSX.utils.book_append_sheet(wb, ws, "Estadísticas");
 
-    XLSX.writeFile(wb, `Dashboard_Eventos_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
+    XLSX.writeFile(wb, `Estadísticas_Eventos_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
   };
 
   return (
@@ -188,9 +188,9 @@ export default function DashboardClient({
         <button onClick={exportAllPDF} className="flex items-center gap-2 hover:text-black transition" title="Exportar PDF">
           <FileText size={18} /> PDF
         </button>
-        <button onClick={exportExcel} className="flex items-center gap-2 hover:text-black transition" title="Exportar Excel">
+       {/* <button onClick={exportExcel} className="flex items-center gap-2 hover:text-black transition" title="Exportar Excel">
           <Download size={18} /> Excel
-        </button>
+        </button>*/}
       </div>
 
       {/* Tarjetas de resumen */}

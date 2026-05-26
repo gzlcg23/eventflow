@@ -37,12 +37,12 @@ export default function NuevoEventoPage() {
             
             
             <p className="text-amber-700 mb-6 leading-relaxed">
-              Recuerda que este evento aún no ha sido activado.<br />
-              Para que tu evento pueda ser activado no olvides mandar tu nombre completo y tu <b># de referencia de tu evento</b> asignado aquí abajo:
+              <br />
+              Para que tu evento pueda ser activado no olvides mandar en tu comprobante de pago tu nombre completo y tu <b>número de referencia de tu evento</b> asignado aquí abajo:
             </p>
             
             <div className="bg-white rounded-xl p-5 border border-amber-200 text-center">
-              <p className="text-sm text-gray-500 mb-1"># de referencia de tu evento:</p>
+              <p className="text-sm text-gray-500 mb-1"># de referencia del evento:</p>
               <p className="font-mono text-3xl font-bold text-amber-900 tracking-widest">
                 {successData.eventNumber}
               </p>

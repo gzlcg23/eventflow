@@ -11,12 +11,12 @@ export async function sendEventCreatedEmail(to: string, event: any) {
     await resend.emails.send({
       from: 'EventFlow <no-reply@redspace.mx>',
       to,
-      subject: `Evento creado: ${event.name}`,
+      subject: `¡Tu evento ${event.name} ha sido creado!`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           
           <div style="text-align: center; padding: 20px 0;">
-            <h1 style="color: #10b981; margin: 0;">EventFlow</h1>
+            <h1 style="color: #000000; margin: 0;">EventFlow</h1>
             <p style="color: #6b7280; margin-top: 8px;">Tu evento ha sido creado exitosamente</p>
           </div>
 
@@ -37,6 +37,7 @@ export async function sendEventCreatedEmail(to: string, event: any) {
               minute: '2-digit'
             })}</p>
             
+            ${event.description ? `<p><strong>Descripción</strong> ${event.description}</p>` : ''}
             ${event.location ? `<p><strong>Ubicación:</strong> ${event.location}</p>` : ''}
             ${event.locationUrl ? `<p><strong>Google Maps:</strong> <a href="${event.locationUrl}" target="_blank">${event.locationUrl}</a></p>` : ''}
             
@@ -56,7 +57,7 @@ export async function sendEventCreatedEmail(to: string, event: any) {
             <hr style="margin: 25px 0; border: none; border-top: 1px solid #e5e7eb;">
             
             <p style="color: #6b7280; font-size: 0.95em;">
-              Recuerda enviar tu comprobante de pago con el <strong>Número de Referencia</strong> para activar tu evento.
+              Recuerda enviar tu comprobante de pago con tu nombre completo y el <strong>Número de Referencia</strong> para activar tu evento.
             </p>
           </div>
 

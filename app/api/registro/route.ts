@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
         to: email,
-        subject: `✅ Registro Confirmado - ${event.name}`,
+        subject: `Registro Confirmado - ${event.name}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
             <div style="background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
@@ -77,13 +77,6 @@ export async function POST(request: Request) {
                 <p style="margin: 0; color: #64748b; font-size: 15px;">
                   <strong>Código único:</strong> <span style="font-family: monospace; background: white; padding: 4px 10px; border-radius: 6px;">${attendee.qrCode}</span>
                 </p>
-              </div>
-
-              <div style="text-align: center; margin-top: 30px;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/evento/${event.slug}" 
-                   style="background: #10b981; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; font-weight: 600; display: inline-block;">
-                  Ver página del evento
-                </a>
               </div>
 
               <p style="text-align: center; color: #64748b; margin-top: 30px; font-size: 14px;">

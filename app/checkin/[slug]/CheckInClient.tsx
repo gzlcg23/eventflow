@@ -182,13 +182,14 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
       {/* Controles - Scanner y Búsqueda en misma fila en desktop */}
       <div className="flex flex-col md:flex-row gap-4">
-        <button
-          onClick={() => setScanning(!scanning)}
-          className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 py-4 rounded-3xl font-medium flex items-center justify-center gap-3 transition"
-        >
-          <QrCode size={24} />
-          {scanning ? "Detener Escáner" : "Escanear QR"}
-        </button>
+             {/* Botón Escanear QR - Más grande */}
+      <button
+        onClick={() => setScanning(!scanning)}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 py-6 rounded-3xl font-medium text-lg flex items-center justify-center gap-3 transition"
+      >
+        <QrCode size={28} />
+        {scanning ? "Detener Escáner" : "Escanear QR"}
+      </button>
 
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-4 text-gray-400" />
@@ -234,7 +235,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
           <span className="text-sm text-gray-400">Check-in Manual</span>
         </div>
 
-        <div className="divide-y divide-zinc-800 max-h-[600px] overflow-auto">
+                <div className="divide-y divide-zinc-800 max-h-[600px] overflow-auto">
           {filteredAttendees.map((attendee) => (
             <div key={attendee.id} className="p-6 flex items-center justify-between hover:bg-zinc-800/50">
               <div>
@@ -244,16 +245,16 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
               <div>
                 {attendee.status === 'CHECKED_IN' ? (
-                  <div className="bg-emerald-600 text-white flex items-center justify-center w-10 h-10 rounded-xl">
-                    <Check size={22} />
+                  <div className="text-emerald-500">
+                    <Check size={28} />
                   </div>
                 ) : (
                   <button
                     onClick={() => handleCheckIn(attendee.id)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-600 hover:bg-emerald-50 rounded-xl transition border border-emerald-600"
+                    className="flex items-center justify-center w-11 h-11 text-amber-500 hover:bg-amber-500/10 rounded-xl transition"
                     title="Hacer Check-in Manual"
                   >
-                    <UserCheck size={22} />
+                    <UserCheck size={26} />
                   </button>
                 )}
               </div>

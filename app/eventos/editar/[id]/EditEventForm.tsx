@@ -129,13 +129,24 @@ export default function EditEventForm({ event }: EditEventFormProps) {
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-black text-white py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 disabled:opacity-70"
-      >
-        {isLoading ? "Guardando cambios..." : "Guardar Cambios"}
-      </button>
+      {/* Botones de Acción */}
+      <div className="flex gap-4 pt-6">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex-1 border border-gray-300 py-4 rounded-2xl font-medium hover:bg-gray-50 transition"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex-1 bg-black text-white py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 disabled:opacity-70"
+        >
+          {isLoading ? "Guardando cambios..." : "Guardar Cambios"}
+        </button>
+      </div>
     </form>
   );
 }

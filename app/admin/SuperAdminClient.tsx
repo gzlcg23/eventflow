@@ -288,15 +288,15 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
           <div className="flex gap-3">
             <button 
               onClick={exportFinancialPDF} 
-              className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-2xl hover:bg-gray-100 transition font-medium"
+              className="flex items-center gap-3 bg-white text-black px-3 py-3 rounded-2xl hover:bg-gray-100 transition font-medium"
             >
-              <Download size={10} /> PDF
+              <Download size={18} /> PDF
             </button>
             <button 
               onClick={exportExcel} 
-              className="flex items-center gap-3 bg-emerald-600 text-white px-6 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"
+              className="flex items-center gap-3 bg-emerald-600 text-white px-3 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"
             >
-              <Download size={10} /> Excel
+              <Download size={18} /> Excel
             </button>
           </div>
         </div>

@@ -323,9 +323,23 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
         </div>
       </div>
       
-      {/* Filtros por Período y Estado */}
+{/* Filtros y Buscador */}
 <div className="bg-white rounded-3xl shadow border p-6">
-  <div className="flex flex-wrap items-center gap-6">
+  <div className="flex flex-col lg:flex-row gap-6">
+    
+    {/* Buscador */}
+    <div className="flex-1 relative">
+      <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+      <input
+        type="text"
+        placeholder="Buscar por evento, organizador, número o fecha..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-11 pr-4 py-3 border rounded-2xl text-sm focus:outline-none focus:border-black"
+      />
+    </div>
+
+    {/* Filtros por fecha */}
     <div>
       <h3 className="font-medium text-gray-700 mb-3">Filtrar por fecha del evento:</h3>
       <div className="flex flex-wrap gap-2">
@@ -352,6 +366,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       </div>
     </div>
 
+    {/* Filtros por Estado */}
     <div>
       <h3 className="font-medium text-gray-700 mb-3">Estado:</h3>
       <div className="flex flex-wrap gap-2">

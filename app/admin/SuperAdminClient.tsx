@@ -285,21 +285,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
             <h2 className="text-3xl font-bold">Reporte Financiero</h2>
             <p className="text-emerald-100 mt-2">Resumen de ingresos generados</p>
           </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={exportFinancialPDF} 
-              className="flex items-center gap-3 bg-white text-black px-12 py-3 rounded-2xl hover:bg-gray-100 transition font-medium"
-            >
-              <Download size={18} /> PDF
-            </button>
-       </br>
-            <button 
-              onClick={exportExcel} 
-              className="flex items-center gap-3 bg-emerald-600 text-white px-12 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"
-            >
-              <Download size={18} /> Excel
-            </button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
@@ -323,6 +308,20 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
           </div>
         </div>
       </div>
+      <div className="flex gap-3">
+            <button 
+              onClick={exportFinancialPDF} 
+              className="flex items-center gap-3 bg-white text-black px-12 py-3 rounded-2xl hover:bg-gray-100 transition font-medium"
+            >
+              <Download size={18} /> PDF
+            </button>
+            <button 
+              onClick={exportExcel} 
+              className="flex items-center gap-3 bg-emerald-600 text-white px-12 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"
+            >
+              <Download size={18} /> Excel
+            </button>
+          </div>
       
 {/* Filtros y Buscador */}
 <div className="bg-white rounded-3xl shadow border p-6">

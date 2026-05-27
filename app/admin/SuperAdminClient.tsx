@@ -209,6 +209,25 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     }
   };
   // ===================================================================
+  // ==================== NUEVA FUNCIÓN: ARCHIVAR EVENTO ====================
+  const archiveEvent = async (eventId: string, eventName: string) => {
+    if (!confirm(`¿Archivar el evento "${eventName}"?\nSe descargará un ZIP con toda la información.`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/archive/${eventId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`✅ Evento "${eventName}" archivado correctamente.`);
+        window.location.reload();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (error) {
+      alert("Error al archivar el evento");
+    }
+  };
+  // =====================================================================
   return (
     <div className="space-y-8">
       {/* Modal */}

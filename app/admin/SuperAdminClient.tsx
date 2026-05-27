@@ -292,6 +292,8 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
             >
               <Download size={18} /> PDF
             </button>
+            </div>
+            <div className="flex gap-3">
             <button 
               onClick={exportExcel} 
               className="flex items-center gap-3 bg-emerald-600 text-white px-12 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"

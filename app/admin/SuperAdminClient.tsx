@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Check, X, Lock, Unlock, Search, Download } from 'lucide-react';
+import { Check, X, Lock, Unlock, Search, Download, Trash2 } from 'lucide-react';
 import { format, differenceInDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -12,7 +12,7 @@ const COSTO_POR_EVENTO = 1500;
 
 export default function SuperAdminClient({ events: initialEvents }: { events: any[] }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "archived">("all");
   const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
 
   // Paginación
@@ -24,7 +24,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deactivationReason, setDeactivationReason] = useState("");
 
-  const filteredEvents = useMemo(() => {
+    const filteredEvents = useMemo(() => {
     let result = [...initialEvents];
 
     if (searchTerm) {
@@ -37,8 +37,12 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       );
     }
 
-    if (statusFilter !== "all") {
-      result = result.filter(event => statusFilter === "active" ? event.isActive : !event.isActive);
+    if (statusFilter === "active") {
+      result = result.filter(e => e.isActive && !e.archived);
+    } else if (statusFilter === "inactive") {
+      result = result.filter(e => !e.isActive && !e.archived);
+    } else if (statusFilter === "archived") {
+      result = result.filter(e => e.archived);
     }
 
     const now = new Date();
@@ -228,6 +232,20 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     }
   };
   // =====================================================================
+    const deletePermanently = async (eventId: string, eventName: string) => {
+    if (!confirm(`¿Eliminar PERMANENTEMENTE "${eventName}" y TODOS sus datos?\nEsta acción es irreversible.`)) return;
+
+    const res = await fetch(`/api/admin/archive/${eventId}/permanent`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      alert("Evento eliminado permanentemente.");
+      window.location.reload();
+    } else {
+      alert("Error al eliminar permanentemente");
+    }
+  };
   return (
     <div className="space-y-8">
       {/* Modal */}
@@ -305,34 +323,74 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
         </div>
       </div>
       
-      {/* Filtros por Período */}
-      <div className="bg-white rounded-3xl shadow border p-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <h3 className="font-medium text-gray-700">Filtrar por fecha del evento:</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'all', label: 'Todo' },
-              { value: 'today', label: 'Hoy' },
-              { value: '7days', label: 'Últimos 7 días' },
-              { value: '30days', label: 'Últimos 30 días' },
-              { value: 'thisMonth', label: 'Este mes' },
-              { value: 'thisYear', label: 'Este año' },
-            ].map(item => (
-              <button
-                key={item.value}
-                onClick={() => setPeriodFilter(item.value as any)}
-                className={`px-5 py-2.5 rounded-2xl text-sm transition ${
-                  periodFilter === item.value 
-                    ? 'bg-black text-white' 
-                    : 'bg-gray-100 hover:bg-gray-200'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Filtros por Período y Estado */}
+<div className="bg-white rounded-3xl shadow border p-6">
+  <div className="flex flex-wrap items-center gap-6">
+    <div>
+      <h3 className="font-medium text-gray-700 mb-3">Filtrar por fecha del evento:</h3>
+      <div className="flex flex-wrap gap-2">
+        {[
+          { value: 'all', label: 'Todo' },
+          { value: 'today', label: 'Hoy' },
+          { value: '7days', label: 'Últimos 7 días' },
+          { value: '30days', label: 'Últimos 30 días' },
+          { value: 'thisMonth', label: 'Este mes' },
+          { value: 'thisYear', label: 'Este año' },
+        ].map(item => (
+          <button
+            key={item.value}
+            onClick={() => setPeriodFilter(item.value as any)}
+            className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+              periodFilter === item.value 
+                ? 'bg-black text-white' 
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
+    </div>
+
+    <div>
+      <h3 className="font-medium text-gray-700 mb-3">Estado:</h3>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'all' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Todos
+        </button>
+        <button
+          onClick={() => setStatusFilter("active")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'active' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Activos
+        </button>
+        <button
+          onClick={() => setStatusFilter("inactive")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'inactive' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Inactivos
+        </button>
+        <button
+          onClick={() => setStatusFilter("archived")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'archived' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Archivados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* Tabla de Eventos con Paginación */}
       <div className="bg-white rounded-3xl shadow border overflow-hidden">
@@ -383,33 +441,46 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                       {event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—'}
                     </td>
                     <td className="p-6">
-                      <div className="flex gap-2">
-                        {/* Botón Descargar ZIP */}
-                      <button
-                        onClick={() => downloadArchive(event.id, event.name)}
-                        className="flex items-center justify-center w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-xl transition"
-                        title="Descargar archivo completo antes de archivar"
-                      >
-                        <Download size={20} />
-                      </button>
+  <div className="flex gap-2">
+    {/* Botón Descargar ZIP */}
+    <button
+      onClick={() => downloadArchive(event.id, event.name)}
+      className="flex items-center justify-center w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-xl transition"
+      title="Descargar archivo completo antes de archivar"
+    >
+      <Download size={20} />
+    </button>
 
-                        {/* Botón ON/OFF */}
-                        <button
-                          onClick={() => toggleActive(event.id, event.isActive)}
-                          className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
-                            event.isActive 
-                              ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
-                              : 'bg-red-100 hover:bg-red-200 text-red-700'
-                          }`}
-                        >
-                          {event.isActive ? (
-                            <span className="font-semibold">ON</span>
-                          ) : (
-                            <span className="font-semibold">OFF</span>
-                          )}
-                        </button>
-                      </div>
-                    </td>
+    {/* Botón ON/OFF - Solo mostrar si NO está archivado */}
+    {!event.archived && (
+      <button
+        onClick={() => toggleActive(event.id, event.isActive)}
+        className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
+          event.isActive 
+            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
+            : 'bg-red-100 hover:bg-red-200 text-red-700'
+        }`}
+      >
+        {event.isActive ? (
+          <span className="font-semibold">ON</span>
+        ) : (
+          <span className="font-semibold">OFF</span>
+        )}
+      </button>
+    )}
+
+    {/* Botón Eliminar Permanentemente - Solo para eventos archivados */}
+    {event.archived && (
+      <button
+        onClick={() => deletePermanently(event.id, event.name)}
+        className="flex items-center justify-center w-9 h-9 text-red-600 hover:bg-red-50 rounded-xl transition"
+        title="Eliminar permanentemente"
+      >
+        <Trash2 size={20} />
+      </button>
+    )}
+  </div>
+</td>
                   </tr>
                 );
               })}

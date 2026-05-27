@@ -340,20 +340,32 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                       {event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—'}
                     </td>
                     <td className="p-6">
-                      <button
-                        onClick={() => toggleActive(event.id, event.isActive)}
-                        className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
-                          event.isActive 
-                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
-                            : 'bg-red-100 hover:bg-red-200 text-red-700'
-                        }`}
-                      >
-                        {event.isActive ? (
-                          <span className="font-semibold">ON</span>
-                        ) : (
-                          <span className="font-semibold">OFF</span>
-                        )}
-                      </button>
+                      <div className="flex gap-2">
+                        {/* Botón Descargar ZIP */}
+                        <button
+                          onClick={() => downloadArchive(event.id, event.name)}
+                          className="flex items-center justify-center w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-xl transition"
+                          title="Descargar archivo completo (ZIP)"
+                        >
+                          📦
+                        </button>
+
+                        {/* Botón ON/OFF */}
+                        <button
+                          onClick={() => toggleActive(event.id, event.isActive)}
+                          className={`px-5 py-2.5 rounded-2xl text-sm font-medium flex items-center gap-2 transition min-w-[90px] justify-center ${
+                            event.isActive 
+                              ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700' 
+                              : 'bg-red-100 hover:bg-red-200 text-red-700'
+                          }`}
+                        >
+                          {event.isActive ? (
+                            <span className="font-semibold">ON</span>
+                          ) : (
+                            <span className="font-semibold">OFF</span>
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

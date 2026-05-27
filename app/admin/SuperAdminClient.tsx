@@ -327,23 +327,9 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
 <div className="bg-white rounded-3xl shadow border p-6">
   <div className="flex flex-col lg:flex-row gap-6">
     
-    {/* Buscador */}
-    <div className="flex-1 relative">
-      <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-      <input
-        type="text"
-        placeholder="Buscar por evento, organizador, número o fecha..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full pl-11 pr-4 py-3 border rounded-2xl text-sm focus:outline-none focus:border-black"
-      />
-    </div>
+   
 
-{/* Filtros y Buscador */}
-<div className="bg-white rounded-3xl shadow border p-6 space-y-6">
-  
-  {/* Filtros en una fila */}
-  <div className="flex flex-wrap items-center gap-8">
+    {/* Filtros por fecha */}
     <div>
       <h3 className="font-medium text-gray-700 mb-3">Filtrar por fecha del evento:</h3>
       <div className="flex flex-wrap gap-2">
@@ -370,18 +356,45 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       </div>
     </div>
 
+    {/* Filtros por Estado */}
     <div>
       <h3 className="font-medium text-gray-700 mb-3">Estado:</h3>
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setStatusFilter("all")} className={`px-5 py-2.5 rounded-2xl text-sm transition ${statusFilter === 'all' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>Todos</button>
-        <button onClick={() => setStatusFilter("active")} className={`px-5 py-2.5 rounded-2xl text-sm transition ${statusFilter === 'active' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>Activos</button>
-        <button onClick={() => setStatusFilter("inactive")} className={`px-5 py-2.5 rounded-2xl text-sm transition ${statusFilter === 'inactive' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>Inactivos</button>
-        <button onClick={() => setStatusFilter("archived")} className={`px-5 py-2.5 rounded-2xl text-sm transition ${statusFilter === 'archived' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>Archivados</button>
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'all' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Todos
+        </button>
+        <button
+          onClick={() => setStatusFilter("active")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'active' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Activos
+        </button>
+        <button
+          onClick={() => setStatusFilter("inactive")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'inactive' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Inactivos
+        </button>
+        <button
+          onClick={() => setStatusFilter("archived")}
+          className={`px-5 py-2.5 rounded-2xl text-sm transition ${
+            statusFilter === 'archived' ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200'
+          }`}
+        >
+          Archivados
+        </button>
       </div>
     </div>
-  </div>
-
-  {/* Buscador - Debajo y a todo el ancho */}
+    {/* Buscador - Debajo y a todo el ancho */}
   <div className="relative">
     <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
     <input
@@ -391,6 +404,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       onChange={(e) => setSearchTerm(e.target.value)}
       className="w-full pl-11 pr-4 py-3.5 border rounded-2xl text-sm focus:outline-none focus:border-black"
     />
+  </div>
   </div>
 </div>
 

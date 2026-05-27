@@ -184,7 +184,31 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       else alert("Error al activar el evento");
     }
   };
+// ==================== FUNCIÓN NUEVA: DESCARGAR ZIP ====================
+  const downloadArchive = async (eventId: string, eventName: string) => {
+    if (!confirm(`¿Descargar archivo completo de "${eventName}" antes de archivar?`)) return;
 
+    try {
+      const res = await fetch(`/api/admin/archive/${eventId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        const link = document.createElement('a');
+        link.href = data.zipUrl;
+        link.download = data.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        alert("✅ Archivo ZIP descargado correctamente.");
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (error) {
+      alert("Error al descargar el archivo");
+    }
+  };
+  // ===================================================================
   return (
     <div className="space-y-8">
       {/* Modal */}

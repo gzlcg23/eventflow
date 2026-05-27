@@ -8,11 +8,12 @@ const isPublicRoute = createRouteMatcher([
   '/evento/(.*)',        // ← Muy importante
   '/api/registro(.*)',   // Para el registro
   '/api/events(.*)',     
+  '/api/cron(.*)'        // ← Hacemos públicas todas las tareas programadas de Vercel
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isPublicRoute(req)) {
-    return; // Permite acceso público
+    return; // Permite acceso público (la seguridad la maneja el CRON_SECRET)
   }
   
   // Protege todas las demás rutas

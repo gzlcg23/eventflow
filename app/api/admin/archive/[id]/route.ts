@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Verificar que el usuario sea Super Admin
+    // Solo Super Admin puede archivar
     const user = await prisma.user.findUnique({
       where: { clerkId: clerkUser.id }
     });
@@ -25,10 +25,8 @@ export async function GET(
       return NextResponse.json({ error: "Solo Super Admin puede archivar eventos" }, { status: 403 });
     }
 
-    // Generar el archivo ZIP
     const { zipBlob, fileName } = await generateEventArchive(id);
 
-    // Convertir Blob a Base64 para enviarlo
     const arrayBuffer = await zipBlob.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
 
@@ -39,10 +37,10 @@ export async function GET(
     });
 
   } catch (error: any) {
-    console.error("Error generando archivo ZIP:", error);
+    console.error("Error generando ZIP:", error);
     return NextResponse.json({ 
       success: false, 
-      error: error.message || "Error al generar archivo" 
+      error: error.message || "Error al generar archivo ZIP" 
     }, { status: 500 });
   }
 }

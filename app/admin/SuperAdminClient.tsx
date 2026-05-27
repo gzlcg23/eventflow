@@ -290,13 +290,13 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
               onClick={exportFinancialPDF} 
               className="flex items-center gap-3 bg-white text-black px-6 py-3 rounded-2xl hover:bg-gray-100 transition font-medium"
             >
-              <Download size={20} /> PDF
+              <Download size={16} /> PDF
             </button>
             <button 
               onClick={exportExcel} 
               className="flex items-center gap-3 bg-emerald-600 text-white px-6 py-3 rounded-2xl hover:bg-emerald-700 transition font-medium"
             >
-              <Download size={20} /> Excel (.xlsx)
+              <Download size={16} /> Excel
             </button>
           </div>
         </div>

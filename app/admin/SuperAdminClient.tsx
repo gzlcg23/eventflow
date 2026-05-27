@@ -366,13 +366,13 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                     <td className="p-6">
                       <div className="flex gap-2">
                         {/* Botón Descargar ZIP */}
-                        <button
-                          onClick={() => downloadArchive(event.id, event.name)}
-                          className="flex items-center justify-center w-9 h-9 text-blue-600 hover:bg-blue-50 rounded-xl transition"
-                          title="Descargar archivo completo (ZIP)"
-                        >
-                          📦
-                        </button>
+                      <button
+                        onClick={() => downloadArchive(event.id, event.name)}
+                        className="flex items-center justify-center w-9 h-9 text-amber-600 hover:bg-amber-50 rounded-xl transition"
+                        title="Descargar archivo completo antes de archivar"
+                      >
+                        <Download size={20} />
+                      </button>
 
                         {/* Botón ON/OFF */}
                         <button

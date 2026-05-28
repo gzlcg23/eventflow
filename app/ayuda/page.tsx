@@ -1,64 +1,78 @@
 // app/ayuda/page.tsx
-import { ArrowRight, Users, QrCode, Calendar, Download, ShieldCheck } from "lucide-react";
+import { ArrowRight, Mail, Phone, MessageCircle, Calendar, Users, QrCode, Download } from "lucide-react";
 import Link from "next/link";
 
 export default function AyudaPage() {
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <h1 className="text-4xl font-bold mb-10">Centro de Ayuda - EventFlow</h1>
+    <div className="max-w-5xl mx-auto p-8 pb-20">
+      <div className="text-center mb-16">
+        <h1 className="text-5xl font-bold mb-4">Centro de Ayuda</h1>
+        <p className="text-xl text-gray-600">Estamos aquí para ayudarte en todo lo que necesites</p>
+      </div>
 
-      <div className="space-y-16">
-        {/* Paso a paso */}
-        <div>
-          <h2 className="text-3xl font-semibold mb-8">Cómo usar EventFlow paso a paso</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white border rounded-3xl p-8">
-              <div className="text-4xl mb-4">1️⃣</div>
-              <h3 className="font-semibold text-xl mb-3">Crea tu evento</h3>
-              <p className="text-gray-600">Ve a "Mis Eventos" → "+ Crear Nuevo Evento". Completa los datos y elige si es público o privado.</p>
-            </div>
-
-            <div className="bg-white border rounded-3xl p-8">
-              <div className="text-4xl mb-4">2️⃣</div>
-              <h3 className="font-semibold text-xl mb-3">Comparte el enlace</h3>
-              <p className="text-gray-600">Copia el enlace del evento y compártelo. Los asistentes se registran y reciben su QR automáticamente.</p>
-            </div>
-
-            <div className="bg-white border rounded-3xl p-8">
-              <div className="text-4xl mb-4">3️⃣</div>
-              <h3 className="font-semibold text-xl mb-3">Realiza el Check-in</h3>
-              <p className="text-gray-600">En la página del evento, usa el botón "Escanear QR" o busca manualmente a los asistentes.</p>
-            </div>
-
-            <div className="bg-white border rounded-3xl p-8">
-              <div className="text-4xl mb-4">4️⃣</div>
-              <h3 className="font-semibold text-xl mb-3">Descarga reportes</h3>
-              <p className="text-gray-600">En cualquier momento puedes descargar Excel o PDF con la lista de asistentes y estadísticas.</p>
-            </div>
+      {/* Guía Rápida */}
+      <div className="mb-20">
+        <h2 className="text-3xl font-semibold mb-10 text-center">Cómo usar EventFlow en 4 pasos</h2>
+        <div className="grid md:grid-cols-4 gap-8">
+          <div className="text-center">
+            <div className="mx-auto w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center text-5xl mb-6">1️⃣</div>
+            <h3 className="font-semibold text-xl mb-3">Crea tu evento</h3>
+            <p className="text-gray-600">Ve a "Mis Eventos" y haz clic en "+ Crear Nuevo Evento".</p>
+          </div>
+          <div className="text-center">
+            <div className="mx-auto w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center text-5xl mb-6">2️⃣</div>
+            <h3 className="font-semibold text-xl mb-3">Comparte el enlace</h3>
+            <p className="text-gray-600">Los asistentes se registran y reciben su QR automáticamente.</p>
+          </div>
+          <div className="text-center">
+            <div className="mx-auto w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center text-5xl mb-6">3️⃣</div>
+            <h3 className="font-semibold text-xl mb-3">Realiza el check-in</h3>
+            <p className="text-gray-600">Escanea los QR o busca manualmente a los asistentes.</p>
+          </div>
+          <div className="text-center">
+            <div className="mx-auto w-20 h-20 bg-purple-100 rounded-3xl flex items-center justify-center text-5xl mb-6">4️⃣</div>
+            <h3 className="font-semibold text-xl mb-3">Descarga reportes</h3>
+            <p className="text-gray-600">Exporta listas y estadísticas en Excel o PDF.</p>
           </div>
         </div>
+      </div>
 
-        {/* Preguntas frecuentes */}
-        <div>
-          <h2 className="text-3xl font-semibold mb-8">Preguntas Frecuentes</h2>
-          <div className="space-y-6">
-            <div className="bg-white border rounded-3xl p-8">
-              <h3 className="font-semibold mb-2">¿Cómo activo un evento privado?</h3>
-              <p className="text-gray-600">Envía tu comprobante de pago con tu nombre completo y el número de referencia del evento. Una vez verificado, lo activaremos.</p>
-            </div>
-            <div className="bg-white border rounded-3xl p-8">
-              <h3 className="font-semibold mb-2">¿Cuántos eventos puedo crear?</h3>
-              <p className="text-gray-600">Por ahora tienes un límite de 5 eventos.</p>
-            </div>
+      {/* Contacto */}
+      <div className="bg-white border rounded-3xl p-12">
+        <h2 className="text-3xl font-semibold text-center mb-10">¿Necesitas ayuda personalizada?</h2>
+        
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <Mail className="w-12 h-12 mx-auto text-emerald-600 mb-4" />
+            <h3 className="font-semibold mb-2">Correo Electrónico</h3>
+            <a href="mailto:soporte@eventflow.com.mx" className="text-emerald-600 hover:underline">
+              soporte@eventflow.com.mx
+            </a>
+          </div>
+
+          <div className="text-center">
+            <Phone className="w-12 h-12 mx-auto text-emerald-600 mb-4" />
+            <h3 className="font-semibold mb-2">Teléfono / WhatsApp</h3>
+            <a href="https://wa.me/525512345678" target="_blank" className="text-emerald-600 hover:underline">
+              +52 55 1234 5678
+            </a>
+            <p className="text-sm text-gray-500 mt-1">Lunes a Viernes 9:00 - 18:00</p>
+          </div>
+
+          <div className="text-center">
+            <MessageCircle className="w-12 h-12 mx-auto text-emerald-600 mb-4" />
+            <h3 className="font-semibold mb-2">Chat en Vivo</h3>
+            <p className="text-emerald-600 font-medium">Próximamente</p>
+            <p className="text-sm text-gray-500">Estamos trabajando en esta función</p>
           </div>
         </div>
+      </div>
 
-        <div className="text-center pt-8">
-          <Link href="/eventos" className="inline-flex items-center gap-3 bg-black text-white px-10 py-4 rounded-2xl text-lg font-medium hover:bg-gray-800">
-            Ir a Mis Eventos
-            <ArrowRight size={24} />
-          </Link>
-        </div>
+      <div className="text-center mt-12">
+        <Link href="/eventos" className="inline-flex items-center gap-3 bg-black text-white px-10 py-4 rounded-2xl text-lg font-medium hover:bg-gray-800">
+          Ir a Mis Eventos
+          <ArrowRight size={24} />
+        </Link>
       </div>
     </div>
   );

@@ -51,43 +51,73 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Features Mejorados */}
+            {/* Tutorial Gráfico - Cómo usar EventFlow */}
       <div className="py-20 bg-white border-t">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-16">Todo lo que necesitas</h2>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">¿Cómo funciona EventFlow?</h2>
+            <p className="text-xl text-gray-600">Es muy sencillo. Solo sigue estos 4 pasos</p>
+          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-10">
+            {/* Paso 1 */}
             <div className="text-center group">
-              <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                <QrCode className="w-9 h-9 text-emerald-600" />
+              <div className="mx-auto w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition duration-300">
+                1️⃣
               </div>
-              <h3 className="text-xl font-semibold mb-3">Registro con QR</h3>
-              <p className="text-gray-600">Los asistentes se registran fácilmente y reciben su QR por correo.</p>
+              <h3 className="font-semibold text-2xl mb-3">Crea tu evento</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Registra nombre, fecha, ubicación y decide si es público o privado. 
+                Obtén tu número de referencia automáticamente.
+              </p>
             </div>
 
+            {/* Paso 2 */}
             <div className="text-center group">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                <Users className="w-9 h-9 text-blue-600" />
+              <div className="mx-auto w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition duration-300">
+                2️⃣
               </div>
-              <h3 className="text-xl font-semibold mb-3">Check-in Rápido</h3>
-              <p className="text-gray-600">Escanea el QR o busca por nombre en segundos.</p>
+              <h3 className="font-semibold text-2xl mb-3">Comparte el enlace</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Los asistentes se registran fácilmente a través del enlace y reciben 
+                su código QR por correo automáticamente.
+              </p>
             </div>
 
+            {/* Paso 3 */}
             <div className="text-center group">
-              <div className="mx-auto w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                <BarChart3 className="w-9 h-9 text-amber-600" />
+              <div className="mx-auto w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition duration-300">
+                3️⃣
               </div>
-              <h3 className="text-xl font-semibold mb-3">Reportes Instantáneos</h3>
-              <p className="text-gray-600">Estadísticas en tiempo real y exportación Excel/PDF.</p>
+              <h3 className="font-semibold text-2xl mb-3">Realiza el evento</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Escanea los códigos QR en la entrada con tu celular. 
+                El check-in es rápido y en tiempo real.
+              </p>
             </div>
 
+            {/* Paso 4 */}
             <div className="text-center group">
-              <div className="mx-auto w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                <ShieldCheck className="w-9 h-9 text-purple-600" />
+              <div className="mx-auto w-20 h-20 bg-purple-100 rounded-3xl flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition duration-300">
+                4️⃣
               </div>
-              <h3 className="text-xl font-semibold mb-3">Eventos Privados</h3>
-              <p className="text-gray-600">Código de acceso y activación manual después del pago.</p>
+              <h3 className="font-semibold text-2xl mb-3">Descarga reportes</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Obtén listas completas, estadísticas de asistencia y exporta a Excel o PDF 
+                cuando lo necesites.
+              </p>
             </div>
+          </div>
+
+          {/* Botón de acción */}
+          <div className="text-center mt-16">
+            <Link 
+              href="/sign-up" 
+              className="inline-flex items-center gap-3 bg-black text-white px-10 py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 transition"
+            >
+              Crear mi primer evento gratis
+              <ArrowRight size={24} />
+            </Link>
           </div>
         </div>
       </div>

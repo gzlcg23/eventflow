@@ -115,7 +115,7 @@ export default async function HomePage() {
               href="/sign-up" 
               className="inline-flex items-center gap-3 bg-black text-white px-10 py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 transition"
             >
-              Crear mi primer evento gratis
+              Crear mi primer evento
               <ArrowRight size={24} />
             </Link>
           </div>

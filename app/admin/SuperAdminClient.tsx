@@ -98,7 +98,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     XLSX.writeFile(wb, `Reporte_SuperAdmin_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
   };
 
-  // ==================== EXPORTAR PDF ====================
     // ==================== EXPORTAR PDF (MEJORADO) ====================
   const exportFinancialPDF = () => {
     const { jsPDF } = require('jspdf');
@@ -124,11 +123,13 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     // Cálculos Financieros
     const grossProfit = activeEvents.length * COSTO_POR_EVENTO;
     const iva = grossProfit * 0.16;
-    const domainCost = 1200;      // Simulado
-    const serverCost = 800;       // Simulado
+    const domainCost = 1200;
+    const serverCost = 800;
     const totalCosts = iva + domainCost + serverCost;
     const netProfit = grossProfit - totalCosts;
-    const partnerShare = netProfit * 0.6;   // Ejemplo: 60% para socio
+
+    const partner1Share = netProfit * 0.40;   // Socio 1 - 40%
+    const partner2Share = netProfit * 0.60;   // Socio 2 - 60%
 
     doc.setFontSize(14);
     doc.text("Ganancias", 14, 90);
@@ -140,11 +141,16 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     doc.text(`- Costo Servidor: $${serverCost.toLocaleString('es-MX')}`, 20, 124);
     doc.text("──────────────────────────────", 20, 132);
     doc.text(`Ganancia Neta: $${netProfit.toLocaleString('es-MX')}`, 20, 140);
-    doc.text(`Ganancia por Socio (60%): $${partnerShare.toLocaleString('es-MX')}`, 20, 148);
+
+    doc.setFontSize(13);
+    doc.text("Distribución por Socio:", 20, 160);
+    doc.setFontSize(11);
+    doc.text(`Socio 1 (40%): $${partner1Share.toLocaleString('es-MX')}`, 20, 170);
+    doc.text(`Socio 2 (60%): $${partner2Share.toLocaleString('es-MX')}`, 20, 178);
 
     // Tabla detallada por evento
     doc.setFontSize(14);
-    doc.text("Detalle por Evento", 14, 170);
+    doc.text("Detalle por Evento", 14, 200);
 
     const tableData = filteredEvents.map(event => [
       event.eventNumber || '—',
@@ -159,7 +165,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     autoTable.default(doc, {
       head: [['Número', 'Evento', 'Organizador', 'Fecha', 'Activado', 'Monto', 'Razón']],
       body: tableData,
-      startY: 180,
+      startY: 210,
       styles: { fontSize: 9 },
       headStyles: { fillColor: [16, 185, 129] }
     });

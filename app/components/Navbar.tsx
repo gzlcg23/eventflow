@@ -99,6 +99,9 @@ export default function Navbar() {
                   <Link href="/dashboard" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
                     Estadísticas
                   </Link>
+                  <Link href="/ayuda" className="hover:text-black transition" onClick={() => setIsOpen(false)}>
+                    Ayuda
+                  </Link>
                   <div className="pt-6">
                     <UserButton afterSignOutUrl="/" />
                   </div>

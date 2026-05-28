@@ -33,6 +33,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-8">
               <Link href="/eventos" className="hover:text-black transition font-medium">Mis Eventos</Link>
               <Link href="/dashboard" className="hover:text-black transition font-medium">Estadísticas</Link>
+              <Link href="/ayuda" className="hover:text-black transition font-medium">Ayuda</Link>
             </div>
           )}
         </div>

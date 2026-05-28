@@ -130,8 +130,8 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     // Cálculos Financieros
     const grossProfit = activeEvents.length * COSTO_POR_EVENTO;
     const iva = grossProfit * 0.16;
-    const domainCost = 1200;
-    const serverCost = 800;
+    const domainCost = 450;
+    const serverCost = 200;
     const totalCosts = iva + domainCost + serverCost;
     const netProfit = grossProfit - totalCosts;
 

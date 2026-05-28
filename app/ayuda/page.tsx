@@ -45,11 +45,11 @@ export default function AyudaPage() {
         <div className="space-y-6">
           <div className="bg-white border rounded-3xl p-8">
             <h3 className="font-semibold text-lg mb-3">¿Cómo activo un evento privado?</h3>
-            <p className="text-gray-600">Envía tu comprobante de pago con el número de referencia del evento al soporte. Una vez verificado, lo activaremos en menos de 24 horas.</p>
+            <p className="text-gray-600">Envía tu comprobante de pago con tu nombre completo y el número de referencia del evento al soporte. Una vez verificado, lo activaremos en menos de 24 horas.</p>
           </div>
           <div className="bg-white border rounded-3xl p-8">
             <h3 className="font-semibold text-lg mb-3">¿Cuántos eventos puedo crear?</h3>
-            <p className="text-gray-600">Tienes un límite de 5 eventos activos. Puedes eliminar o archivar eventos para crear más.</p>
+            <p className="text-gray-600">Tienes un límite de 5 eventos activos.</p>
           </div>
           <div className="bg-white border rounded-3xl p-8">
             <h3 className="font-semibold text-lg mb-3">¿Los asistentes reciben el QR automáticamente?</h3>

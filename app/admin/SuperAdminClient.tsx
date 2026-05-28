@@ -99,6 +99,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   };
 
   // ==================== EXPORTAR PDF ====================
+    // ==================== EXPORTAR PDF (MEJORADO) ====================
   const exportFinancialPDF = () => {
     const { jsPDF } = require('jspdf');
     const autoTable = require('jspdf-autotable');
@@ -111,30 +112,56 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     doc.setFontSize(11);
     doc.text(`Generado el ${format(today, "dd 'de' MMMM yyyy 'a las' HH:mm")}`, 14, 28);
 
+    // Resumen General
     doc.setFontSize(14);
     doc.text("Resumen General", 14, 45);
 
     doc.setFontSize(11);
-    doc.text(`Eventos Mostrados: ${filteredEvents.length}`, 20, 55);
-    doc.text(`Eventos Activados: ${activeEvents.length}`, 20, 63);
+    doc.text(`Total de Eventos: ${filteredEvents.length}`, 20, 55);
+    doc.text(`Eventos Activos: ${activeEvents.length}`, 20, 63);
+    doc.text(`Eventos Inactivos: ${filteredEvents.length - activeEvents.length}`, 20, 71);
+
+    // Cálculos Financieros
+    const grossProfit = activeEvents.length * COSTO_POR_EVENTO;
+    const iva = grossProfit * 0.16;
+    const domainCost = 1200;      // Simulado
+    const serverCost = 800;       // Simulado
+    const totalCosts = iva + domainCost + serverCost;
+    const netProfit = grossProfit - totalCosts;
+    const partnerShare = netProfit * 0.6;   // Ejemplo: 60% para socio
+
+    doc.setFontSize(14);
+    doc.text("Ganancias", 14, 90);
+
+    doc.setFontSize(11);
+    doc.text(`Ganancia Bruta: $${grossProfit.toLocaleString('es-MX')}`, 20, 100);
+    doc.text(`- IVA (16%): $${iva.toLocaleString('es-MX')}`, 20, 108);
+    doc.text(`- Costo Dominio: $${domainCost.toLocaleString('es-MX')}`, 20, 116);
+    doc.text(`- Costo Servidor: $${serverCost.toLocaleString('es-MX')}`, 20, 124);
+    doc.text("──────────────────────────────", 20, 132);
+    doc.text(`Ganancia Neta: $${netProfit.toLocaleString('es-MX')}`, 20, 140);
+    doc.text(`Ganancia por Socio (60%): $${partnerShare.toLocaleString('es-MX')}`, 20, 148);
+
+    // Tabla detallada por evento
+    doc.setFontSize(14);
+    doc.text("Detalle por Evento", 14, 170);
 
     const tableData = filteredEvents.map(event => [
       event.eventNumber || '—',
       event.name,
       `${event.user.firstName || ''} ${event.user.lastName || ''}`.trim() || 'Sin nombre',
       format(new Date(event.date), "dd/MM/yyyy"),
-      event.isActive ? `$${COSTO_POR_EVENTO}` : '—',
       event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—',
+      event.isActive ? `$${COSTO_POR_EVENTO}` : '—',
       event.deactivationReason || '—'
     ]);
 
     autoTable.default(doc, {
-      head: [['Número', 'Evento', 'Organizador', 'Fecha Evento', 'Monto', 'Activado', 'Razón Desactivación']],
+      head: [['Número', 'Evento', 'Organizador', 'Fecha', 'Activado', 'Monto', 'Razón']],
       body: tableData,
-      startY: 95,
+      startY: 180,
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [16, 185, 129] },
-      columnStyles: { 6: { cellWidth: 55 } }
+      headStyles: { fillColor: [16, 185, 129] }
     });
 
     doc.save(`Reporte_Financiero_${format(today, "yyyy-MM-dd")}.pdf`);

@@ -5,24 +5,29 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/evento/(.*)',        // ← Muy importante
-  '/api/registro(.*)',   // Para el registro
+  '/evento/(.*)',        
+  '/api/registro(.*)',   
   '/api/events(.*)',     
-  '/api/cron(.*)'        // ← Hacemos públicas todas las tareas programadas de Vercel
+  '/api/cron(.*)',       
+  '/api/auth(.*)',       // ← OBLIGATORIO: Permite los callbacks internos de Clerk/Google
+  '/sso-callback(.*)'    // ← OBLIGATORIO: Permite las redirecciones de Single Sign-On en producción
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // 1. Si es una ruta pública o interna de autenticación, no hagas nada y deja pasar la petición
   if (isPublicRoute(req)) {
-    return; // Permite acceso público (la seguridad la maneja el CRON_SECRET)
+    return; 
   }
   
-  // Protege todas las demás rutas
+  // 2. Protege todas las demás rutas privadas
   await auth.protect();
 });
 
 export const config = {
   matcher: [
-    '/((?!.+\\.[\\w]+$|_next).*)',
+    // Ignora los internos de Next.js y todos los archivos estáticos (imágenes, favicons, etc.)
+    '/((?!_next|[^?]*\\.[\\w]+$|api/auth).*)',
+    // Asegura que se ejecute para las rutas principales y APIs
     '/',
     '/(api|trpc)(.*)',
   ],

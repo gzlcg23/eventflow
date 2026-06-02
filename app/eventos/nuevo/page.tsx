@@ -1,4 +1,6 @@
 // app/eventos/nuevo/page.tsx
+'use client';   // ← Esta línea es OBLIGATORIA
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createEvent } from './actions';
@@ -10,13 +12,13 @@ export default function NuevoEventoPage() {
   const [successData, setSuccessData] = useState<any>(null);
   const [isPublic, setIsPublic] = useState(true);
 
-  // ==================== GENERACIÓN DE CSRF TOKEN EN SERVER COMPONENT ====================
+  // Generar CSRF Token en Server Component (se pasa al cliente)
   const csrfToken = cookies().get('__Host-csrf-token')?.value || '';
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
 
-    // Añadir el token CSRF al formData
+    // Añadir token CSRF
     formData.append('csrfToken', csrfToken);
 
     const result = await createEvent(formData);
@@ -129,7 +131,7 @@ export default function NuevoEventoPage() {
           </div>
         </div>
 
-        {/* Campo Código de Acceso - Solo para eventos privados */}
+        {/* Campo Código de Acceso */}
         {!isPublic && (
           <div>
             <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 8 caracteres) *</label>
@@ -145,7 +147,7 @@ export default function NuevoEventoPage() {
           </div>
         )}
 
-        {/* CSRF Token oculto */}
+        {/* CSRF Token */}
         <input type="hidden" name="csrfToken" value={csrfToken} />
 
         <button

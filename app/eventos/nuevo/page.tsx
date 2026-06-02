@@ -127,13 +127,12 @@ export default function NuevoEventoPage() {
         {/* Campo Código de Acceso */}
         {!isPublic && (
           <div>
-            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 12 caracteres)</label>
+            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres) *</label>
             <input 
               name="accessCode" 
               type="text" 
               required 
               minLength={4}
-              maxLength={12}
               className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
               placeholder="EJEMPLO2026"
             />

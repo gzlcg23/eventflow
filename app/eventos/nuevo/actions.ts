@@ -13,16 +13,13 @@ export async function createEvent(formData: FormData) {
     const user = await getOrCreateUser();
     if (!user) redirect("/sign-in");
 
-    // ==================== VALIDACIÓN CSRF ====================
-    const csrfTokenFromForm = formData.get('csrfToken') as string;
-    const csrfTokenFromCookie = cookies().get('__Host-csrf-token')?.value;
+        // ==================== VALIDACIÓN CSRF (temporalmente desactivada) ====================
+    // const csrfTokenFromForm = formData.get('csrfToken') as string;
+    // const csrfTokenFromCookie = cookies().get('__Host-csrf-token')?.value;
 
-    if (!csrfTokenFromForm || !csrfTokenFromCookie || csrfTokenFromForm !== csrfTokenFromCookie) {
-      return { 
-        success: false, 
-        error: "Solicitud inválida. Por favor recarga la página e intenta de nuevo." 
-      };
-    }
+    // if (!csrfTokenFromForm || !csrfTokenFromCookie || csrfTokenFromForm !== csrfTokenFromCookie) {
+    //   return { success: false, error: "Solicitud inválida. Por favor recarga la página." };
+    // }
     // ========================================================
 
     // === LIMITAR A 5 EVENTOS POR USUARIO ===

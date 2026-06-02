@@ -19,7 +19,6 @@
     "clerk": "^1.1.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "flags": "^4.0.6",
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
@@ -54,8 +53,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "react-phone-number-input": "^3.x.x",
-    "flags": "^1.x.x"
+    "typescript": "^5"
   }
 }

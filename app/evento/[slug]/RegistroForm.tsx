@@ -2,6 +2,9 @@
 'use client';
 
 import { useState } from 'react';
+// 🌟 Importamos el componente de teléfono internacional y sus estilos de banderas
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 export default function RegistroForm({ 
   eventId, 
@@ -24,16 +27,10 @@ export default function RegistroForm({
   const [codeVerified, setCodeVerified] = useState(isPublic);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Estado local para capturar el teléfono de manera controlada e impedir letras
-  const [phoneValue, setPhoneValue] = useState("");
+  // 🌟 Estado controlado por el componente internacional (Ej: "+525512345678")
+  const [phoneValue, setPhoneValue] = useState<string | undefined>("");
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Reemplaza cualquier caracter que NO sea número, espacio, + o -
-    const cleanValue = e.target.value.replace(/[^\d\s+\-]/g, "");
-    setPhoneValue(cleanValue);
-  };
-
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(""); 
@@ -45,7 +42,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       name: formData.get("name")?.toString().trim(),
       email: formData.get("email")?.toString().trim().toLowerCase(),
       company: formData.get("company")?.toString().trim() || null,
-      phone: phoneValue.trim() || null,
+      // 🌟 Enviamos la cadena con formato internacional limpio (+LADA...) o null si está vacío
+      phone: phoneValue ? phoneValue.trim() : null,
     };
 
     try {
@@ -66,7 +64,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         setEventData(data.event);
         setSuccess(true);
       } else {
-        // 🌟 Si el backend responde un error (400, 409, 500), mostramos el mensaje exacto que mandó
         console.log("❌ Error devuelto por la API:", data);
         setErrorMsg(data.error || "Ocurrió un error al registrarse");
       }
@@ -171,13 +168,10 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
       <div>
         <label className="block text-sm font-medium mb-2">Nombre completo *</label>
-        {/* Usamos minLength y maxLength nativo */}
         <input 
           name="name" 
           type="text" 
           required 
-          minLength={3}
-          maxLength={70}
           placeholder="Ej. Juan Pérez"
           className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
         />
@@ -185,48 +179,46 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
       <div>
         <label className="block text-sm font-medium mb-2">Correo electrónico *</label>
-        {/* El type="email" nativo obliga a que tenga estructura de correo */}
         <input 
           name="email" 
           type="email" 
           required 
-          maxLength={100}
           placeholder="juan@empresa.com"
           className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium mb-2">Empresa</label>
           <input 
             name="company" 
             type="text" 
-            maxLength={100}
             placeholder="Opcional"
             className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
           />
         </div>
+        
         <div>
-          <label className="block text-sm font-medium mb-2">Teléfono</label>
-          {/* El input controlado handlePhoneChange rechaza letras al escribir */}
-          <input 
-            name="phone" 
-            type="tel" 
+          <label className="block text-sm font-medium mb-2">Teléfono móvil</label>
+          {/* 🌟 Campo internacional con selector e inyección directa de clases */}
+          <PhoneInput
+            international
+            defaultCountry="MX"
+            placeholder="Número de celular"
             value={phoneValue}
-            onChange={handlePhoneChange}
-            maxLength={15}
-            placeholder="Solo números"
-            className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
+            onChange={setPhoneValue}
+            className="flex w-full px-4 py-1.5 border rounded-2xl bg-white focus-within:border-black phone-input-container"
           />
         </div>
       </div>
-      {/* Coloca esto justo antes del botón <button type="submit"> */}
-{errorMsg && (
-  <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-200">
-    ⚠️ {errorMsg}
-  </div>
-)}
+
+      {errorMsg && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-200">
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={isLoading}

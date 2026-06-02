@@ -7,46 +7,66 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Función de sanitización nativa para prevenir XSS e inyecciones de código HTML/Script
+function sanitizeInput(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
+    // 1. Leer el JSON enviado por el cliente
+    const body = await request.json();
 
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const company = formData.get("company") as string;
-    const phone = formData.get("phone") as string;
-    const eventId = formData.get("eventId") as string;
+    // 2. Extraer y sanitizar rigurosamente las entradas
+    const name = sanitizeInput(body.name || "").trim();
+    const email = sanitizeInput(body.email || "").toLowerCase().trim();
+    const company = sanitizeInput(body.company || "").trim();
+    const phone = sanitizeInput(body.phone || "").trim();
+    const eventId = sanitizeInput(body.eventId || "").trim();
 
+    // 3. Validar campos obligatorios
     if (!name || !email || !eventId) {
-      return NextResponse.json({ error: "Faltan datos obligatorios" }, { status: 400 });
+      return NextResponse.json({ error: "Faltan datos obligatorios." }, { status: 400 });
     }
 
+    // Validar formato básico de email para evitar basura
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "El formato de correo electrónico no es válido." }, { status: 400 });
+    }
+
+    // 4. Verificar que el evento exista y esté activo en Neon
     const event = await prisma.event.findUnique({
       where: { id: eventId }
     });
 
     if (!event) {
-      return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "El evento especificado no existe." }, { status: 404 });
     }
 
+    // 5. Crear el registro del asistente (Prisma protege de forma nativa contra SQL Injection)
     const attendee = await prisma.attendee.create({
       data: {
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        company: company?.trim() || null,
-        phone: phone?.trim() || null,
+        name,
+        email,
+        company: company || null,
+        phone: phone || null,
         eventId,
-        qrCode: `ATT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        qrCode: `ATT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
       },
     });
 
+    // 6. Generar el enlace seguro para el Check-In con código QR
     const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkin/${attendee.qrCode}`;
-    const qrCodeBuffer = await QRCode.toBuffer(qrUrl, { width: 400 });
+    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
 
-               // ==================== ENVÍO DE EMAIL CON QR (VERSIÓN MÁS CONFIABLE) ====================
+    // ==================== ENVÍO DE EMAIL CON RESEND ====================
     try {
-      const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
-
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
         to: email,
@@ -62,7 +82,7 @@ export async function POST(request: Request) {
 
               <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #166534; margin: 0 0 8px 0;">${event.name}</h2>
-                <p style="color: #4ade80; font-weight: bold; margin: 0;">
+                <p style="color: #15803d; font-weight: bold; margin: 0;">
                   ${new Date(event.date).toLocaleDateString('es-MX', { 
                     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
                     hour: '2-digit', minute: '2-digit' 
@@ -71,46 +91,46 @@ export async function POST(request: Request) {
               </div>
 
               <div style="text-align: center; margin: 30px 0;">
-                <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el evento:</p>
+                <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el acceso:</p>
                 <img src="${qrCodeDataUrl}" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
               </div>
 
               <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
                 <p style="margin: 0; color: #64748b; font-size: 15px;">
-                  <strong>Código único:</strong> <span style="font-family: monospace; background: white; padding: 4px 10px; border-radius: 6px;">${attendee.qrCode}</span>
+                  <strong>Código único de acceso:</strong> <span style="font-family: monospace; background: white; padding: 4px 10px; border-radius: 6px;">${attendee.qrCode}</span>
                 </p>
               </div>
 
-
               <p style="text-align: center; color: #64748b; margin-top: 30px; font-size: 14px;">
-                Guarda este correo. Lo necesitarás el día del evento.
+                Guarda este correo. Deberás presentar el código QR en la entrada el día del evento.
               </p>
             </div>
           </div>
         `,
       });
 
-      console.log(`📧 Email con QR enviado a ${email}`);
+      console.log(`📧 Email con QR enviado con éxito a ${email}`);
     } catch (emailError) {
-      console.error("Error enviando email:", emailError);
+      console.error("⚠️ Error al despachar el email mediante Resend:", emailError);
     }
 
-    // Para la pantalla de éxito seguimos usando data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
-
+    // 7. Retornar éxito rotundo al cliente
     return NextResponse.json({
       success: true,
       attendee,
       qrCodeDataUrl,
-      event: event,
-      message: "Registro exitoso"
+      event,
+      message: "Registro completado con éxito."
     });
 
   } catch (error: any) {
-    console.error("Error en registro:", error);
+    console.error("❌ Error crítico en API de registro de asistentes:", error);
+    
+    // Controlar correos duplicados para el mismo evento (P2002 es el código de error único de Prisma)
     if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Este correo ya está registrado en este evento" }, { status: 409 });
+      return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
     }
-    return NextResponse.json({ error: "Error al procesar el registro" }, { status: 500 });
+    
+    return NextResponse.json({ error: "Ocurrió un error interno al procesar tu registro." }, { status: 500 });
   }
 }

@@ -22,20 +22,29 @@ const crearEventoSchema = z.object({
 
   // Quitamos .datetime() para soportar formatos simplificados de inputs HTML (como datetime-local)
   // Reemplaza la propiedad 'date' de tu esquema actual por esta:
+  // Reemplaza la propiedad 'date' de tu crearEventoSchema por esta:
   date: z.preprocess(
     (val) => val,
     z.coerce.date({ message: "La fecha y hora ingresadas no son válidas" })
   ).refine(
     (val) => {
-      const unaHoraEnElFuturo = new Date();
-      // Le sumamos 1 hora a la hora actual del servidor
-      unaHoraEnElFuturo.setHours(unaHoraEnElFuturo.getHours() + 1);
-      
-      // Compara los timestamps absolutos (evita problemas de zona horaria)
-      return val.getTime() >= unaHoraEnElFuturo.getTime();
+      // 1. Obtenemos el momento exacto actual
+      const ahora = new Date();
+
+      // 2. Calculamos la fecha del evento adaptada a la zona horaria del cliente (CDMX)
+      // Convertimos el valor recibido a los minutos equivalentes de la CDMX
+      const stringCdmx = ahora.toLocaleString("en-US", { timeZone: "America/Mexico_City" });
+      const fechaActualCdmx = new Date(stringCdmx);
+
+      // 3. Creamos la marca de "Mínimo 1 hora de anticipación" basada en el tiempo real de CDMX
+      const minimoPermitido = new Date(fechaActualCdmx);
+      minimoPermitido.setHours(minimoPermitido.getHours() + 1);
+
+      // 4. Comparamos los tiempos absolutos
+      return val.getTime() >= minimoPermitido.getTime();
     }, 
     {
-      message: "El evento debe programarse con al menos 1 hora de anticipación a partir de este momento.",
+      message: "El evento debe programarse con al menos 1 hora de anticipación respecto al horario de la CDMX.",
     }
   ),
 

@@ -1,10 +1,16 @@
+// next.config.js
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: {
-    // Permite que los despliegues de producción terminen exitosamente 
-    // incluso si el proyecto tiene errores de TypeScript.
+    // Esto obliga a Vercel a ignorar los errores de tipos y terminar el build con éxito
     ignoreBuildErrors: true,
+  },
+  // Configuración de seguridad nativa para Server Actions en subdominios
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['registros.redspace.mx', 'redspace.mx'],
+    },
   },
 };
 

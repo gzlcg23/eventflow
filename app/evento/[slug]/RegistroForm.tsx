@@ -33,10 +33,10 @@ export default function RegistroForm({
     setPhoneValue(cleanValue);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setErrorMsg(""); // 🌟 Limpiamos errores anteriores
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg(""); 
 
     const formData = new FormData(e.currentTarget);
     
@@ -66,14 +66,16 @@ export default function RegistroForm({
         setEventData(data.event);
         setSuccess(true);
       } else {
-        // 🌟 Guardamos el mensaje amigable de Zod en el estado
-      setErrorMsg(data.error || "Ocurrió un error al registrarse");
-    }
+        // 🌟 Si el backend responde un error (400, 409, 500), mostramos el mensaje exacto que mandó
+        console.log("❌ Error devuelto por la API:", data);
+        setErrorMsg(data.error || "Ocurrió un error al registrarse");
+      }
     } catch (error) {
-    setErrorMsg("Error de conexión. Inténtalo de nuevo.");
-  } finally {
-    setIsLoading(false);
-  }
+      console.error("❌ Error de red/conexión:", error);
+      setErrorMsg("Error de conexión. Inténtalo de nuevo.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const verifyAccessCode = () => {

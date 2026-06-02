@@ -1,6 +1,7 @@
 // middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
+// 1. Definimos todas las rutas que Clerk debe ignorar y dejar totalmente públicas
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
@@ -9,26 +10,26 @@ const isPublicRoute = createRouteMatcher([
   '/api/registro(.*)',   
   '/api/events(.*)',     
   '/api/cron(.*)',       
-  '/api/auth(.*)',       // ← OBLIGATORIO: Permite los callbacks internos de Clerk/Google
-  '/sso-callback(.*)'    // ← OBLIGATORIO: Permite las redirecciones de Single Sign-On en producción
+  '/api/auth(.*)',       // Callback interno de Clerk/Google
+  '/sso-callback(.*)'    // Redirecciones de Google OAuth en producción
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // 1. Si es una ruta pública o interna de autenticación, no hagas nada y deja pasar la petición
+  // 2. Si la ruta coincide con la lista pública, no hacemos nada y dejamos pasar el flujo
   if (isPublicRoute(req)) {
     return; 
   }
   
-  // 2. Protege todas las demás rutas privadas
+  // 3. Protege de forma estricta el resto de las rutas privadas (ej. /dashboard)
   await auth.protect();
 });
 
 export const config = {
   matcher: [
-    // Ignora los internos de Next.js y todos los archivos estáticos (imágenes, favicons, etc.)
+    // El matcher oficial de Clerk modificado para producción:
+    // Evita ejecutar el middleware en archivos estáticos (.html, .css, .js, imágenes, etc.) y rutas internas de Next.js
     '/((?!_next|[^?]*\\.[\\w]+$|api/auth).*)',
-    // Asegura que se ejecute para las rutas principales y APIs
-    '/',
+    // Obliga a que el middleware se ejecute siempre para las APIs y las páginas raíz
     '/(api|trpc)(.*)',
   ],
-}
+};

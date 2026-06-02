@@ -9,7 +9,7 @@ export default function NuevoEventoPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
-  const [isPublic, setIsPublic] = useState(true);   // ← Estado agregado
+  const [isPublic, setIsPublic] = useState(true);
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -127,12 +127,13 @@ export default function NuevoEventoPage() {
         {/* Campo Código de Acceso - Solo para eventos privados */}
         {!isPublic && (
           <div>
-            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres) *</label>
+            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 8 caracteres) *</label>
             <input 
               name="accessCode" 
               type="text" 
               required 
               minLength={4}
+              maxLength={8}
               className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
               placeholder="EJEMPLO2026"
             />

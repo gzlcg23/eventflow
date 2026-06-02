@@ -71,7 +71,8 @@ export default function NuevoEventoPage() {
     <div className="max-w-2xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Crear Nuevo Evento</h1>
 
-      <form action={handleSubmit} className="space-y-6">
+      <form   onSubmit={(e) => {    e.preventDefault();    const formData = new FormData(e.currentTarget);    handleSubmit(formData);
+  }}   className="space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">Nombre del Evento *</label>
           <input name="name" type="text" required className="w-full px-4 py-3 border rounded-2xl" />

@@ -1,35 +1,54 @@
 // middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// 1. Definimos todas las rutas que Clerk debe ignorar y dejar totalmente públicas
+// Rutas públicas (no requieren autenticación)
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/evento/(.*)',        
-  '/api/registro(.*)',   
-  '/api/events(.*)',     
-  '/api/cron(.*)',       
-  '/api/auth(.*)',       // Callback interno de Clerk/Google
-  '/sso-callback(.*)'    // Redirecciones de Google OAuth en producción
+  '/evento/(.*)',
+  '/api/registro(.*)',
+  '/api/events(.*)',
+  '/api/cron(.*)',
+  '/api/auth(.*)',
+  '/sso-callback(.*)',
+  '/ayuda',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // 2. Si la ruta coincide con la lista pública, no hacemos nada y dejamos pasar el flujo
+// Rutas que requieren protección CSRF (POST, PUT, DELETE)
+const isMutatingRoute = createRouteMatcher([
+  '/api/(.*)',
+  '/eventos/nuevo',
+  '/eventos/editar/(.*)',
+]);
+
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  // 1. Rutas públicas → dejar pasar
   if (isPublicRoute(req)) {
-    return; 
+    return NextResponse.next();
   }
-  
-  // 3. Protege de forma estricta el resto de las rutas privadas (ej. /dashboard)
+
+  // 2. Proteger rutas privadas
   await auth.protect();
+
+  // 3. Protección CSRF para rutas mutantes (POST, PUT, DELETE)
+  if (isMutatingRoute(req) && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
+    const csrfTokenFromCookie = req.cookies.get('__Host-csrf-token')?.value;
+    const csrfTokenFromHeader = req.headers.get('x-csrf-token');
+
+    if (!csrfTokenFromCookie || !csrfTokenFromHeader || csrfTokenFromCookie !== csrfTokenFromHeader) {
+      return NextResponse.json({ error: "CSRF token inválido. Por favor recarga la página." }, { status: 403 });
+    }
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // El matcher oficial de Clerk modificado para producción:
-    // Evita ejecutar el middleware en archivos estáticos (.html, .css, .js, imágenes, etc.) y rutas internas de Next.js
     '/((?!_next|[^?]*\\.[\\w]+$|api/auth).*)',
-    // Obliga a que el middleware se ejecute siempre para las APIs y las páginas raíz
     '/(api|trpc)(.*)',
   ],
 };

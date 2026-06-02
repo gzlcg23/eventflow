@@ -27,34 +27,38 @@ model User {
 }
 
 model Event {
-  id              String    @id @default(cuid())
-  slug            String    @unique
-  eventNumber     String    @unique
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  eventNumber       String   @unique
+  name              String
+  description       String?
+  date              DateTime
+  endDate           DateTime?
+  location          String?
+  locationUrl       String?
+  bannerUrl         String?
 
-  name            String
-  description     String?
-  date            DateTime
-  endDate         DateTime?
-  location        String?
-  locationUrl     String?
-  bannerUrl       String?
-  
-  isPublic        Boolean   @default(true)
-  accessCode      String?
-  isActive        Boolean   @default(false)
-  paymentStatus   String    @default("PENDING")
-  paymentAmount   Decimal?
-  deactivationReason  String?     // ← Nuevo campo
-  activatedAt     DateTime?                    // ← Nuevo
-  paymentMethod   String?
-  paymentNotes    String?
+  isPublic          Boolean  @default(true)
+  accessCode        String?
+  isActive          Boolean  @default(false)
+  paymentStatus     String   @default("PENDING")
+  paymentAmount     Decimal?
+  deactivationReason String?
+  activatedAt       DateTime?
+  paymentMethod     String?
+  paymentNotes      String?
 
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  attendees       Attendee[]
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  attendees         Attendee[]
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // ==================== CAMPOS PARA ARCHIVADO ====================
+  archived          Boolean  @default(false)
+  archivedAt        DateTime?
+  // ============================================================
 }
 
 enum UserRole {

@@ -1,12 +1,13 @@
 // app/api/checkin/route.ts
 import { prisma } from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server"; // 🌟 Cambiamos a auth() que es más rápido y seguro en APIs
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    // 1. Obtener solo el id de la sesión de Clerk de forma segura
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -29,8 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Asistente no encontrado" }, { status: 404 });
     }
 
-    // Verificación de propietario usando clerkId
-    if (attendee.event.user?.clerkId !== clerkUser.id) {
+    // 2. Verificación de propietario comparando directamente contra el userId de la sesión
+    if (attendee.event.user?.clerkId !== userId) {
       return NextResponse.json({ error: "No tienes permiso para este evento" }, { status: 403 });
     }
 

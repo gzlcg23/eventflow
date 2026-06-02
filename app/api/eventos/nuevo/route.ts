@@ -17,15 +17,16 @@ const crearEventoSchema = z.object({
     .max(500, "La descripción no puede exceder los 500 caracteres")
     .transform(val => val.trim())
     .optional()
-    .nullable(),
+    .nullable()
+    .or(z.literal("")), // Permite string vacío si no ponen descripción
 
-  // Validamos que el usuario envíe una fecha string ISO válido y la transformamos a objeto Date
-  date: z.string()
-    .datetime({ message: "El formato de fecha y hora no es válido" })
-    .pipe(z.coerce.date())
-    .refine((val) => val > new Date(), {
-      message: "La fecha del evento debe ser en el futuro",
-    }),
+  // Quitamos .datetime() para soportar formatos simplificados de inputs HTML (como datetime-local)
+  date: z.preprocess(
+    (val) => val,
+    z.coerce.date({ message: "La fecha y hora ingresadas no son válidas" })
+  ).refine((val) => val > new Date(), {
+    message: "La fecha del evento debe ser en el futuro",
+  }),
 
   location: z.string()
     .min(3, "La ubicación debe tener al menos 3 caracteres")
@@ -39,7 +40,8 @@ const crearEventoSchema = z.object({
     .nullable()
     .refine(val => !val || /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(val), {
       message: "El enlace de Google Maps no es una URL válida"
-    }),
+    })
+    .or(z.literal("")),
 
   isPublic: z.boolean().default(true),
   
@@ -48,14 +50,19 @@ const crearEventoSchema = z.object({
     .optional()
     .nullable()
     .refine((val) => !val || (val.length >= 4 && val.length <= 12), {
-      message: "El código de acceso debe tener entre 4 and 12 caracteres",
-    }),
+      message: "El código de acceso debe tener entre 4 y 12 caracteres",
+    })
+    .or(z.literal("")),
 
-  capacity: z.number()
-    .int("La capacidad debe ser un número entero")
-    .positive("La capacidad debe ser mayor a cero")
-    .optional()
-    .nullable(),
+  // Usamos z.coerce.number() para transformar strings de inputs numéricos ("50" -> 50)
+  capacity: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number()
+      .int("La capacidad debe ser un número entero")
+      .positive("La capacidad debe ser mayor a cero")
+      .optional()
+      .nullable()
+  ),
 });
 
 // Función auxiliar para limpiar texto y prevenir XSS (Inyección de Scripts)
@@ -91,8 +98,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: errorMessages }, { status: 400 });
     }
 
-    // 4. Datos limpios, parseados y validados por Zod
-    const { name, description, date, location, locationUrl, isPublic } = result.data;
+    // 4. Datos limpios, parseados y validados por Zod (Añadido 'capacity' aquí 🌟)
+    const { name, description, date, location, locationUrl, isPublic, capacity } = result.data;
     let accessCode = result.data.accessCode;
 
     // Validación de lógica de negocio adicional (Código requerido si es privado)
@@ -158,6 +165,7 @@ export async function POST(req: Request) {
         locationUrl: sanitizedLocationUrl,
         isPublic,
         accessCode: sanitizedAccessCode,
+        capacity: capacity || null, // Guardamos la capacidad parseada 🌟
         eventNumber,
         isActive: false,
         paymentStatus: "PENDING",

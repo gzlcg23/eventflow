@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createEvent } from './actions';
 
 export default function NuevoEventoPage() {
   const router = useRouter();
@@ -11,18 +10,44 @@ export default function NuevoEventoPage() {
   const [successData, setSuccessData] = useState<any>(null);
   const [isPublic, setIsPublic] = useState(true);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Evita la recarga y el comportamiento de Server Action
     setIsLoading(true);
 
-    const result = await createEvent(formData);
+    const formData = new FormData(e.currentTarget);
+    
+    // Estructuramos los datos en un JSON plano e higiénico
+    const payload = {
+      name: formData.get("name"),
+      description: formData.get("description"),
+      date: formData.get("date"),
+      location: formData.get("location"),
+      locationUrl: formData.get("locationUrl"),
+      isPublic: isPublic,
+      accessCode: formData.get("accessCode"),
+    };
 
-    if (result.success) {
-      setSuccessData(result.event);
-    } else {
-      alert("Error: " + result.error);
+    try {
+      const response = await fetch('/api/eventos/nuevo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccessData(result.event);
+      } else {
+        alert("Error: " + result.error);
+      }
+    } catch (err) {
+      alert("Error de conexión. Inténtalo de nuevo más tarde.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   // Pantalla de éxito
@@ -71,8 +96,7 @@ export default function NuevoEventoPage() {
     <div className="max-w-2xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Crear Nuevo Evento</h1>
 
-      <form   onSubmit={(e) => {    e.preventDefault();    const formData = new FormData(e.currentTarget);    handleSubmit(formData);
-  }}   className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">Nombre del Evento *</label>
           <input name="name" type="text" required className="w-full px-4 py-3 border rounded-2xl" />

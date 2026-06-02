@@ -33,6 +33,7 @@ export default function NuevoEventoPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ← OBLIGATORIO: Envía las cookies de sesión de Clerk a la API
         body: JSON.stringify(payload),
       });
 

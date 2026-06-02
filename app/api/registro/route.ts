@@ -4,12 +4,11 @@ import { NextResponse } from "next/server";
 // @ts-ignore
 import QRCode from 'qrcode';
 import { Resend } from 'resend';
-import { z } from 'zod'; // 🌟 Importamos Zod
+import { z } from 'zod';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ==================== ESQUEMA DE VALIDACIÓN CORREGIDO (ZOD) ====================
-// Asegúrate de que el schema no contenga variables indefinidas o errores tipográficos
+// ==================== ESQUEMA DE VALIDACIÓN ULTRA-BLINDADO ====================
 const registroSchema = z.object({
   eventId: z.string().min(1, "El ID del evento es requerido"),
   
@@ -29,39 +28,39 @@ const registroSchema = z.object({
       message: "El correo debe incluir una terminación de dominio válida (ejemplo: .com, .mx)"
     }),
 
-  company: z.string()
-    .max(100, "El nombre de la empresa es demasiado largo")
-    .transform(val => val.trim())
-    .optional()
-    .nullable(),
+  // Modificados para procesar correctamente si el usuario los envía vacíos o nulos
+  company: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : String(val).trim()),
+    z.string().max(100, "El nombre de la empresa es demasiado largo")
+  ).optional().nullable(),
 
-  phone: z.string()
-    .max(15, "El teléfono no puede exceder los 15 dígitos")
-    .regex(/^[\d\s+\-]+$/, "El teléfono solo debe contener números")
-    .transform(val => val.trim())
-    .optional()
-    .nullable()
-    .or(z.literal(''))
+  phone: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : String(val).trim()),
+    z.string()
+      .max(15, "El teléfono no puede exceder los 15 dígitos")
+      .refine(val => val === "" || /^[\d\s+\-]+$/.test(val), {
+        message: "El teléfono solo debe contener números"
+      })
+  ).optional().nullable()
 });
 
 export async function POST(request: Request) {
   try {
-    // 1. Leer el JSON enviado por el cliente
     const body = await request.json();
 
-    // 2. Validar con Zod de forma estricta
+    // Ejecutar la validación de Zod de forma segura
     const result = registroSchema.safeParse(body);
 
-    // Si la validación falla, retornamos el error detallado al cliente
+    // Si Zod detecta campos inválidos, responderemos con estatus 400 y el mensaje exacto
     if (!result.success) {
       const errorMessages = result.error.errors.map(err => err.message).join(", ");
       return NextResponse.json({ error: errorMessages }, { status: 400 });
     }
 
-    // Datos completamente limpios, validados y tipados por Zod
+    // Datos limpios y totalmente validados por Zod
     const { name, email, company, phone, eventId } = result.data;
 
-    // 3. Verificar que el evento exista y esté activo en Neon
+    // Verificar que el evento exista en la base de datos
     const event = await prisma.event.findUnique({
       where: { id: eventId }
     });
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "El evento especificado no existe." }, { status: 404 });
     }
 
-    // 4. Crear el registro del asistente
+    // Crear el asistente en Prisma
     const attendee = await prisma.attendee.create({
       data: {
         name,
@@ -82,7 +81,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // 5. Generar la URL base dinámica usando variables de entorno o producción
+    // Generación del código QR
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://registros.redspace.mx';
     const qrUrl = `${baseUrl}/checkin/${attendee.qrCode}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
@@ -90,7 +89,7 @@ export async function POST(request: Request) {
     const base64Data = qrCodeDataUrl.split(',')[1];
     const qrBuffer = Buffer.from(base64Data, 'base64');
 
-    // ==================== ENVÍO DE EMAIL CON RESEND ====================
+    // Envío del correo con Resend
     try {
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
@@ -136,7 +135,6 @@ export async function POST(request: Request) {
           }
         ]
       });
-      console.log(`📧 Email enviado a ${email}`);
     } catch (emailError) {
       console.error("⚠️ Error Resend:", emailError);
     }
@@ -145,15 +143,20 @@ export async function POST(request: Request) {
       success: true,
       attendee,
       qrCodeDataUrl,
-      event,
-      message: "Registro completado con éxito."
+      event
     });
 
   } catch (error: any) {
-    console.error("❌ Error en API de registro:", error);
+    // 🌟 Imprime el error real en tu terminal/consola de Vercel para saber exactamente qué falló
+    console.error("❌ ERROR INTERNO DEL SERVIDOR:", error);
+    
     if (error.code === 'P2002') {
       return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
     }
-    return NextResponse.json({ error: "Ocurrió un error interno al procesar tu registro." }, { status: 500 });
+    
+    return NextResponse.json({ 
+      error: "Ocurrió un error interno al procesar tu registro.",
+      details: error.message || error
+    }, { status: 500 });
   }
 }

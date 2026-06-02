@@ -21,7 +21,16 @@ export default function RegistroForm({
   const [qrNumber, setQrNumber] = useState("");
   const [eventData, setEventData] = useState<any>(null);
   const [enteredCode, setEnteredCode] = useState("");
-  const [codeVerified, setCodeVerified] = useState(isPublic); // Si es público, ya está verificado
+  const [codeVerified, setCodeVerified] = useState(isPublic);
+
+  // Estado local para capturar el teléfono de manera controlada e impedir letras
+  const [phoneValue, setPhoneValue] = useState("");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Reemplaza cualquier caracter que NO sea número, espacio, + o -
+    const cleanValue = e.target.value.replace(/[^\d\s+\-]/g, "");
+    setPhoneValue(cleanValue);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,20 +38,19 @@ export default function RegistroForm({
 
     const formData = new FormData(e.currentTarget);
     
-    // === MIGRACIÓN CRÍTICA ANTI-403: Convertimos a un objeto JSON plano ===
     const payload = {
       eventId: eventId,
-      name: formData.get("name"),
-      email: formData.get("email"),
-      company: formData.get("company"),
-      phone: formData.get("phone"),
+      name: formData.get("name")?.toString().trim(),
+      email: formData.get("email")?.toString().trim().toLowerCase(),
+      company: formData.get("company")?.toString().trim() || null,
+      phone: phoneValue.trim() || null,
     };
 
     try {
       const res = await fetch('/api/registro', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Le indicamos a Cloudflare que es una petición JSON estándar
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
@@ -82,13 +90,11 @@ export default function RegistroForm({
     document.body.removeChild(link);
   };
 
-  // Si es evento privado y aún no se verificó el código
   if (!isPublic && !codeVerified) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-semibold mb-6">Evento Privado</h2>
         <p className="text-gray-600 mb-8">Ingresa el código de acceso para registrarte</p>
-        
         <input
           type="text"
           value={enteredCode}
@@ -96,7 +102,6 @@ export default function RegistroForm({
           placeholder="CÓDIGO DE ACCESO"
           className="w-full max-w-xs mx-auto text-center text-xl tracking-widest uppercase border-2 border-gray-300 focus:border-black rounded-2xl px-6 py-4 mb-6"
         />
-        
         <button
           onClick={verifyAccessCode}
           className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg font-medium hover:bg-gray-800"
@@ -157,27 +162,58 @@ export default function RegistroForm({
     );
   }
 
-  // Formulario normal
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label className="block text-sm font-medium mb-2">Nombre completo *</label>
-        <input name="name" type="text" required className="w-full px-4 py-3 border rounded-2xl" />
+        {/* Usamos minLength y maxLength nativo */}
+        <input 
+          name="name" 
+          type="text" 
+          required 
+          minLength={3}
+          maxLength={70}
+          placeholder="Ej. Juan Pérez"
+          className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
+        />
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-2">Correo electrónico *</label>
-        <input name="email" type="email" required className="w-full px-4 py-3 border rounded-2xl" />
+        {/* El type="email" nativo obliga a que tenga estructura de correo */}
+        <input 
+          name="email" 
+          type="email" 
+          required 
+          maxLength={100}
+          placeholder="juan@empresa.com"
+          className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium mb-2">Empresa</label>
-          <input name="company" type="text" className="w-full px-4 py-3 border rounded-2xl" />
+          <input 
+            name="company" 
+            type="text" 
+            maxLength={100}
+            placeholder="Opcional"
+            className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
+          />
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Teléfono</label>
-          <input name="phone" type="tel" className="w-full px-4 py-3 border rounded-2xl" />
+          {/* El input controlado handlePhoneChange rechaza letras al escribir */}
+          <input 
+            name="phone" 
+            type="tel" 
+            value={phoneValue}
+            onChange={handlePhoneChange}
+            maxLength={15}
+            placeholder="Solo números"
+            className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:border-black" 
+          />
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Rutas públicas (no requieren autenticación)
+// Rutas públicas (no requieren autenticación en el escudo inicial)
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
@@ -11,21 +11,23 @@ const isPublicRoute = createRouteMatcher([
   '/evento/(.*)',        
   '/api/registro(.*)',   
   '/api/events(.*)',     
-  '/api/eventos/(.*)',   // ← ASEGÚRATE DE QUE ESTA LÍNEA EXISTA PARA TU NUEVA API
+  '/api/eventos/(.*)',   
+  '/api/checkin(.*)',     // 🌟 AGREGADO: Permite que la API de Check-In sea accesible por fetch
   '/api/cron(.*)',       
   '/api/auth(.*)',       
   '/sso-callback(.*)'    
 ]);
 
-// Rutas que requieren protección CSRF (POST, PUT, DELETE)
+// Rutas que requieren protección CSRF manual (POST, PUT, DELETE)
+// Excluimos las APIs que se procesan mediante JSON puro y ráfagas rápidas
 const isMutatingRoute = createRouteMatcher([
-  '/api/(.*)',
+  '/api/(?!checkin|registro|events|eventos)(.*)', // 🌟 CORRECCIÓN: Excluye estas APIs del filtro CSRF manual usando un regex "negative lookahead"
   '/eventos/nuevo',
   '/eventos/editar/(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  // 1. Rutas públicas → dejar pasar
+  // 1. Rutas públicas → dejar pasar directo
   if (isPublicRoute(req)) {
     return NextResponse.next();
   }

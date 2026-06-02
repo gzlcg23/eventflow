@@ -8,13 +8,13 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/evento/(.*)',
-  '/api/registro(.*)',
-  '/api/events(.*)',
-  '/api/cron(.*)',
-  '/api/auth(.*)',
-  '/sso-callback(.*)',
-  '/ayuda',
+  '/evento/(.*)',        
+  '/api/registro(.*)',   
+  '/api/events(.*)',     
+  '/api/eventos/(.*)',   // ← ASEGÚRATE DE QUE ESTA LÍNEA EXISTA PARA TU NUEVA API
+  '/api/cron(.*)',       
+  '/api/auth(.*)',       
+  '/sso-callback(.*)'    
 ]);
 
 // Rutas que requieren protección CSRF (POST, PUT, DELETE)

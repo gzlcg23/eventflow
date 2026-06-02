@@ -7,7 +7,6 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Función de sanitización nativa para prevenir XSS e inyecciones de código HTML/Script
 function sanitizeInput(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -19,28 +18,23 @@ function sanitizeInput(text: string): string {
 
 export async function POST(request: Request) {
   try {
-    // 1. Leer el JSON enviado por el cliente
     const body = await request.json();
 
-    // 2. Extraer y sanitizar rigurosamente las entradas
     const name = sanitizeInput(body.name || "").trim();
     const email = sanitizeInput(body.email || "").toLowerCase().trim();
     const company = sanitizeInput(body.company || "").trim();
     const phone = sanitizeInput(body.phone || "").trim();
     const eventId = sanitizeInput(body.eventId || "").trim();
 
-    // 3. Validar campos obligatorios
     if (!name || !email || !eventId) {
       return NextResponse.json({ error: "Faltan datos obligatorios." }, { status: 400 });
     }
 
-    // Validar formato básico de email para evitar basura
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json({ error: "El formato de correo electrónico no es válido." }, { status: 400 });
     }
 
-    // 4. Verificar que el evento exista y esté activo en Neon
     const event = await prisma.event.findUnique({
       where: { id: eventId }
     });
@@ -49,7 +43,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "El evento especificado no existe." }, { status: 404 });
     }
 
-    // 5. Crear el registro del asistente (Prisma protege de forma nativa contra SQL Injection)
     const attendee = await prisma.attendee.create({
       data: {
         name,
@@ -61,9 +54,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // 6. Generar el enlace seguro para el Check-In con código QR
-    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkin/${attendee.qrCode}`;
+    // 6. Generar la URL base dinámica usando variables de entorno o producción
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://registros.redspace.mx';
+    const qrUrl = `${baseUrl}/checkin/${attendee.qrCode}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
+
+    // === SOLUCIÓN CRÍTICA ADJUNTOS EN EMAILS ===
+    // Convertimos la cadena Base64 generada por QRCode a un Buffer binario para Resend
+    const base64Data = qrCodeDataUrl.split(',')[1];
+    const qrBuffer = Buffer.from(base64Data, 'base64');
 
     // ==================== ENVÍO DE EMAIL CON RESEND ====================
     try {
@@ -71,6 +70,7 @@ export async function POST(request: Request) {
         from: 'EventFlow <no-reply@redspace.mx>',
         to: email,
         subject: `Registro Confirmado - ${event.name}`,
+        // 🌟 Usamos 'cid:qrcode' en el src para enlazar la imagen embebida de forma segura
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
             <div style="background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
               <div style="text-align: center; margin: 30px 0;">
                 <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el acceso:</p>
-                <img src="${qrCodeDataUrl}" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
+                <img src="cid:qrcode" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
               </div>
 
               <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
@@ -107,6 +107,15 @@ export async function POST(request: Request) {
             </div>
           </div>
         `,
+        // 🌟 Adjuntamos el código QR como un archivo binario en el correo
+        attachments: [
+          {
+            filename: 'codigo-qr.png',
+            content: qrBuffer,
+            content_type: 'image/png',
+            cid: 'qrcode' // Este ID coincide exactamente con el 'cid:qrcode' de la etiqueta img arriba
+          }
+        ]
       });
 
       console.log(`📧 Email con QR enviado con éxito a ${email}`);
@@ -114,7 +123,6 @@ export async function POST(request: Request) {
       console.error("⚠️ Error al despachar el email mediante Resend:", emailError);
     }
 
-    // 7. Retornar éxito rotundo al cliente
     return NextResponse.json({
       success: true,
       attendee,
@@ -125,12 +133,9 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error("❌ Error crítico en API de registro de asistentes:", error);
-    
-    // Controlar correos duplicados para el mismo evento (P2002 es el código de error único de Prisma)
     if (error.code === 'P2002') {
       return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
     }
-    
     return NextResponse.json({ error: "Ocurrió un error interno al procesar tu registro." }, { status: 500 });
   }
 }

@@ -8,34 +8,42 @@ import { z } from 'zod'; // 🌟 Importamos Zod
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ==================== ESQUEMA DE VALIDACIÓN (ZOD) ====================
+// ==================== ESQUEMA DE VALIDACIÓN CORREGIDO (ZOD) ====================
 const registroSchema = z.object({
   eventId: z.string().min(1, "El ID del evento es requerido"),
+  
   name: z.string()
-  .min(3, "El nombre debe tener al menos 3 caracteres")
-  .max(70, "El nombre es demasiado largo")
-  .transform(val => val.trim())
-  // 🌟 Validar que tenga al menos dos palabras (Nombre + Apellido)
-  .refine(val => val.split(/\s+/).filter(Boolean).length >= 2, {
-    message: "Por favor, ingresa tu nombre completo (Nombre y al menos un Apellido)"
-  }),
+    .min(3, "El nombre debe tener al menos 3 caracteres")
+    .max(70, "El nombre es demasiado largo")
+    .transform(val => val.trim())
+    // 🌟 Mensaje personalizado si no ponen nombre y apellido
+    .refine(val => val.split(/\s+/).filter(Boolean).length >= 2, {
+      message: "Por favor, ingresa al menos un nombre y un apellido"
+    }),
+
   email: z.string()
     .email("El formato de correo electrónico no es válido")
     .max(100, "El correo es demasiado largo")
-    .transform(val => val.toLowerCase().trim()),
+    .transform(val => val.toLowerCase().trim())
+    // 🌟 Forzar terminación de dominio válida (ej: .com, .com.mx, .net)
+    // Evita que escriban cosas incompletas como "usuario@dominio." o "usuario@dominio.c"
+    .refine(val => /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,6}(\.[a-zA-Z]{2,6})?$/.test(val), {
+      message: "El correo debe incluir una terminación de dominio válida (ejemplo: .com, .mx)"
+    }),
+
   company: z.string()
     .max(100, "El nombre de la empresa es demasiado largo")
     .transform(val => val.trim())
     .optional()
     .nullable(),
+
   phone: z.string()
     .max(15, "El teléfono no puede exceder los 15 dígitos")
-    // Validamos que solo contenga números, espacios, o signos de + / -
     .regex(/^[\d\s+\-]+$/, "El teléfono solo debe contener números")
     .transform(val => val.trim())
     .optional()
     .nullable()
-    .or(z.literal('')) // Permite strings vacíos si no se llena el campo
+    .or(z.literal(''))
 });
 
 export async function POST(request: Request) {

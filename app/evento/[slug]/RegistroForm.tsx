@@ -28,12 +28,23 @@ export default function RegistroForm({
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    formData.append("eventId", eventId);
+    
+    // === MIGRACIÓN CRÍTICA ANTI-403: Convertimos a un objeto JSON plano ===
+    const payload = {
+      eventId: eventId,
+      name: formData.get("name"),
+      email: formData.get("email"),
+      company: formData.get("company"),
+      phone: formData.get("phone"),
+    };
 
     try {
       const res = await fetch('/api/registro', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json', // Le indicamos a Cloudflare que es una petición JSON estándar
+        },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -48,7 +59,7 @@ export default function RegistroForm({
         alert(data.error || "Error al registrarse");
       }
     } catch (error) {
-      alert("Error de conexión.");
+      alert("Error de conexión. Inténtalo de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +117,7 @@ export default function RegistroForm({
         <p className="text-2xl font-medium text-emerald-600 mb-6">¡Registro Exitoso!</p>
         <p className="text-2xl text-gray-800 mb-10">Gracias, <strong>{attendeeName}</strong></p>
 
-        <div className="mx-auto mb-5 w-72 h-72">
+        <div className="flex justify-center mx-auto mb-5 w-72 h-72">
           <img src={qrCode} alt="QR" className="rounded-3xl shadow-2xl border-8 border-white" />
         </div>
 
@@ -121,7 +132,7 @@ export default function RegistroForm({
           <div className="flex items-center gap-4 flex-wrap">
             {eventData?.location && <span>📍 {eventData.location}</span>}
             {eventData?.locationUrl && (
-              <a href={eventData.locationUrl} target="_blank" className="inline-flex items-center gap-1.5 text-gray-700 hover:text-gray-900 font-medium transition-colors">
+              <a href={eventData.locationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-gray-700 hover:text-gray-900 font-medium transition-colors">
                 Ver en Google Maps →
               </a>
             )}

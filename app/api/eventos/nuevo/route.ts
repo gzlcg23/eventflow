@@ -21,12 +21,23 @@ const crearEventoSchema = z.object({
     .or(z.literal("")), // Permite string vacío si no ponen descripción
 
   // Quitamos .datetime() para soportar formatos simplificados de inputs HTML (como datetime-local)
+  // Reemplaza la propiedad 'date' de tu esquema actual por esta:
   date: z.preprocess(
     (val) => val,
     z.coerce.date({ message: "La fecha y hora ingresadas no son válidas" })
-  ).refine((val) => val > new Date(), {
-    message: "La fecha del evento debe ser en el futuro",
-  }),
+  ).refine(
+    (val) => {
+      const unaHoraEnElFuturo = new Date();
+      // Le sumamos 1 hora a la hora actual del servidor
+      unaHoraEnElFuturo.setHours(unaHoraEnElFuturo.getHours() + 1);
+      
+      // Compara los timestamps absolutos (evita problemas de zona horaria)
+      return val.getTime() >= unaHoraEnElFuturo.getTime();
+    }, 
+    {
+      message: "El evento debe programarse con al menos 1 hora de anticipación a partir de este momento.",
+    }
+  ),
 
   location: z.string()
     .min(3, "La ubicación debe tener al menos 3 caracteres")

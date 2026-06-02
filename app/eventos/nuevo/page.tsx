@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createEvent } from './actions';
+import { cookies } from 'next/headers';
 
 export default function NuevoEventoPage() {
   const router = useRouter();
@@ -11,8 +12,16 @@ export default function NuevoEventoPage() {
   const [successData, setSuccessData] = useState<any>(null);
   const [isPublic, setIsPublic] = useState(true);
 
+  // Generar CSRF Token desde Server Component
+  const csrfToken = cookies().get('__Host-csrf-token')?.value || '';
+
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
+
+    // Añadir token CSRF al FormData
+    if (csrfToken) {
+      formData.append('csrfToken', csrfToken);
+    }
 
     const result = await createEvent(formData);
 
@@ -127,18 +136,21 @@ export default function NuevoEventoPage() {
         {/* Campo Código de Acceso */}
         {!isPublic && (
           <div>
-            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 8 caracteres) *</label>
+            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 11 caracteres) *</label>
             <input 
               name="accessCode" 
               type="text" 
               required 
               minLength={4}
-              maxLength={8}
+              maxLength={11}
               className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
               placeholder="EJEMPLO2026"
             />
           </div>
         )}
+
+        {/* CSRF Token */}
+        <input type="hidden" name="csrfToken" value={csrfToken} />
 
         <button
           type="submit"

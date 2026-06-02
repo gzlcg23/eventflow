@@ -4,6 +4,59 @@ import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { sendEventCreatedEmail } from "@/lib/email";
+import { z } from 'zod';
+
+// ==================== ESQUEMA DE VALIDACIÓN CON ZOD ====================
+const crearEventoSchema = z.object({
+  name: z.string()
+    .min(3, "El nombre del evento debe tener al menos 3 caracteres")
+    .max(100, "El nombre del evento es demasiado largo")
+    .transform(val => val.trim()),
+
+  description: z.string()
+    .max(500, "La descripción no puede exceder los 500 caracteres")
+    .transform(val => val.trim())
+    .optional()
+    .nullable(),
+
+  // Validamos que el usuario envíe una fecha string ISO válido y la transformamos a objeto Date
+  date: z.string()
+    .datetime({ message: "El formato de fecha y hora no es válido" })
+    .pipe(z.coerce.date())
+    .refine((val) => val > new Date(), {
+      message: "La fecha del evento debe ser en el futuro",
+    }),
+
+  location: z.string()
+    .min(3, "La ubicación debe tener al menos 3 caracteres")
+    .max(150, "La ubicación es demasiado larga")
+    .transform(val => val.trim()),
+
+  // Validamos URL de Google Maps de manera segura por si viene vacía o nula
+  locationUrl: z.string()
+    .transform(val => val?.trim() || "")
+    .optional()
+    .nullable()
+    .refine(val => !val || /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(val), {
+      message: "El enlace de Google Maps no es una URL válida"
+    }),
+
+  isPublic: z.boolean().default(true),
+  
+  accessCode: z.string()
+    .transform(val => val?.trim().toUpperCase() || "")
+    .optional()
+    .nullable()
+    .refine((val) => !val || (val.length >= 4 && val.length <= 12), {
+      message: "El código de acceso debe tener entre 4 and 12 caracteres",
+    }),
+
+  capacity: z.number()
+    .int("La capacidad debe ser un número entero")
+    .positive("La capacidad debe ser mayor a cero")
+    .optional()
+    .nullable(),
+});
 
 // Función auxiliar para limpiar texto y prevenir XSS (Inyección de Scripts)
 function sanitizeText(text: string): string {
@@ -23,31 +76,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Sesión expirada. Por favor inicia sesión de nuevo." }, { status: 401 });
     }
 
-    // 2. Extraer y estructurar el body en JSON estándar
+    // 2. Extraer el body de la petición
     const body = await req.json();
-    
-    // 3. Sanitización de Inputs (Evita que metan etiquetas <script> o código malicioso)
-    const name = sanitizeText(body.name || "").trim();
-    const description = sanitizeText(body.description || "").trim();
-    const dateStr = body.date;
-    const location = sanitizeText(body.location || "").trim();
-    const locationUrl = sanitizeText(body.locationUrl || "").trim();
-    const isPublic = body.isPublic === true;
-    
-    let accessCode = sanitizeText(body.accessCode || "").trim().toUpperCase();
 
-    // 4. Validaciones estrictas del lado del Servidor
-    if (!name || !dateStr) {
-      return NextResponse.json({ success: false, error: "El nombre y la fecha son obligatorios." }, { status: 400 });
+    // 3. Validar la estructura de datos con Zod de forma estricta
+    const result = crearEventoSchema.safeParse(body);
+
+    if (!result.success) {
+      // Mapeamos los errores de Zod en una sola cadena amigable para el frontend
+      const errorMessages = result.error.issues
+        .map((issue) => issue.message)
+        .join(", ");
+
+      return NextResponse.json({ success: false, error: errorMessages }, { status: 400 });
     }
 
-    if (!isPublic) {
-      if (!accessCode || accessCode.length < 4 || accessCode.length > 12) {
-        return NextResponse.json({ success: false, error: "El código de acceso debe tener entre 4 y 12 caracteres." }, { status: 400 });
-      }
-    } else {
-      accessCode = null; // Si es público, nos aseguramos de que no guarde basura
+    // 4. Datos limpios, parseados y validados por Zod
+    const { name, description, date, location, locationUrl, isPublic } = result.data;
+    let accessCode = result.data.accessCode;
+
+    // Validación de lógica de negocio adicional (Código requerido si es privado)
+    if (!isPublic && !accessCode) {
+      return NextResponse.json({ success: false, error: "Los eventos privados requieren obligatoriamente un código de acceso." }, { status: 400 });
     }
+
+    // Sanitizar textos antes de persistir en base de datos para prevenir XSS vectorizados
+    const sanitizedName = sanitizeText(name);
+    const sanitizedDescription = description ? sanitizeText(description) : null;
+    const sanitizedLocation = sanitizeText(location);
+    const sanitizedLocationUrl = locationUrl ? sanitizeText(locationUrl) : null;
+    const sanitizedAccessCode = !isPublic && accessCode ? sanitizeText(accessCode) : null;
 
     // 5. Límite de seguridad de negocio (Máximo 5 eventos)
     const existingEventsCount = await prisma.event.count({
@@ -75,8 +133,8 @@ export async function POST(req: Request) {
       counter++;
     }
 
-    // 7. Generación segura de Slug único
-    let slug = name
+    // 7. Generación segura de Slug único basado en el nombre limpio
+    let slug = sanitizedName
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -90,16 +148,16 @@ export async function POST(req: Request) {
       slugCounter++;
     }
 
-    // 8. Inserción Segura en la Base de Datos (Prisma automatiza la protección Anti-SQLi)
+    // 8. Inserción Segura en la Base de Datos con Prisma
     const event = await prisma.event.create({
       data: {
-        name,
-        description: description || null,
-        date: new Date(dateStr),
-        location: location || null,
-        locationUrl: locationUrl || null,
+        name: sanitizedName,
+        description: sanitizedDescription,
+        date: date, // Ya es un objeto Date gracias a Zod
+        location: sanitizedLocation,
+        locationUrl: sanitizedLocationUrl,
         isPublic,
-        accessCode,
+        accessCode: sanitizedAccessCode,
         eventNumber,
         isActive: false,
         paymentStatus: "PENDING",

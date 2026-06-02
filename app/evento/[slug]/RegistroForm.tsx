@@ -22,6 +22,7 @@ export default function RegistroForm({
   const [eventData, setEventData] = useState<any>(null);
   const [enteredCode, setEnteredCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(isPublic);
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Estado local para capturar el teléfono de manera controlada e impedir letras
   const [phoneValue, setPhoneValue] = useState("");
@@ -33,8 +34,9 @@ export default function RegistroForm({
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
+  setErrorMsg(""); // 🌟 Limpiamos errores anteriores
 
     const formData = new FormData(e.currentTarget);
     
@@ -64,13 +66,14 @@ export default function RegistroForm({
         setEventData(data.event);
         setSuccess(true);
       } else {
-        alert(data.error || "Error al registrarse");
-      }
-    } catch (error) {
-      alert("Error de conexión. Inténtalo de nuevo.");
-    } finally {
-      setIsLoading(false);
+        // 🌟 Guardamos el mensaje amigable de Zod en el estado
+      setErrorMsg(data.error || "Ocurrió un error al registrarse");
     }
+    } catch (error) {
+    setErrorMsg("Error de conexión. Inténtalo de nuevo.");
+  } finally {
+    setIsLoading(false);
+  }
   };
 
   const verifyAccessCode = () => {
@@ -163,7 +166,7 @@ export default function RegistroForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       <div>
         <label className="block text-sm font-medium mb-2">Nombre completo *</label>
         {/* Usamos minLength y maxLength nativo */}
@@ -216,7 +219,12 @@ export default function RegistroForm({
           />
         </div>
       </div>
-
+      {/* Coloca esto justo antes del botón <button type="submit"> */}
+{errorMsg && (
+  <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-200">
+    ⚠️ {errorMsg}
+  </div>
+)}
       <button
         type="submit"
         disabled={isLoading}

@@ -18,33 +18,26 @@ const crearEventoSchema = z.object({
     .transform(val => val.trim())
     .optional()
     .nullable()
-    .or(z.literal("")), // Permite string vacío si no ponen descripción
+    .or(z.literal("")),
 
-  // Quitamos .datetime() para soportar formatos simplificados de inputs HTML (como datetime-local)
-  // Reemplaza la propiedad 'date' de tu esquema actual por esta:
-  // Reemplaza la propiedad 'date' de tu crearEventoSchema por esta:
+  // Tolerante a formatos datetime-local y protegido contra desfases horarios del servidor
   date: z.preprocess(
-    (val) => val,
+    (val) => {
+      if (typeof val === "string" && val.length === 16) {
+        return `${val}:00`;
+      }
+      return val;
+    },
     z.coerce.date({ message: "La fecha y hora ingresadas no son válidas" })
   ).refine(
     (val) => {
-      // 1. Obtenemos el momento exacto actual
-      const ahora = new Date();
-
-      // 2. Calculamos la fecha del evento adaptada a la zona horaria del cliente (CDMX)
-      // Convertimos el valor recibido a los minutos equivalentes de la CDMX
-      const stringCdmx = ahora.toLocaleString("en-US", { timeZone: "America/Mexico_City" });
-      const fechaActualCdmx = new Date(stringCdmx);
-
-      // 3. Creamos la marca de "Mínimo 1 hora de anticipación" basada en el tiempo real de CDMX
-      const minimoPermitido = new Date(fechaActualCdmx);
-      minimoPermitido.setHours(minimoPermitido.getHours() + 1);
-
-      // 4. Comparamos los tiempos absolutos
-      return val.getTime() >= minimoPermitido.getTime();
-    }, 
+      // Damos un margen de tolerancia de 2 horas hacia atrás por si el servidor UTC difiere del huso horario local
+      const limiteTolerante = new Date();
+      limiteTolerante.setHours(limiteTolerante.getHours() - 2);
+      return val.getTime() > limiteTolerante.getTime();
+    },
     {
-      message: "El evento debe programarse con al menos 1 hora de anticipación respecto al horario de la CDMX.",
+      message: "La fecha del evento no es válida o ya ha pasado.",
     }
   ),
 
@@ -53,7 +46,6 @@ const crearEventoSchema = z.object({
     .max(150, "La ubicación es demasiado larga")
     .transform(val => val.trim()),
 
-  // Validamos URL de Google Maps de manera segura por si viene vacía o nula
   locationUrl: z.string()
     .transform(val => val?.trim() || "")
     .optional()
@@ -74,7 +66,7 @@ const crearEventoSchema = z.object({
     })
     .or(z.literal("")),
 
-  // Usamos z.coerce.number() para transformar strings de inputs numéricos ("50" -> 50)
+  // 🌟 Coercición para capacity: maneja strings vacíos y asegura números enteros positivos
   capacity: z.preprocess(
     (val) => (val === "" || val === null || val === undefined ? undefined : val),
     z.coerce.number()
@@ -85,7 +77,7 @@ const crearEventoSchema = z.object({
   ),
 });
 
-// Función auxiliar para limpiar texto y prevenir XSS (Inyección de Scripts)
+// Función auxiliar para limpiar texto y prevenir XSS
 function sanitizeText(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -97,7 +89,7 @@ function sanitizeText(text: string): string {
 
 export async function POST(req: Request) {
   try {
-    // 1. Protección de Autenticación (Solo usuarios reales logueados en Clerk)
+    // 1. Protección de Autenticación
     const user = await getOrCreateUser();
     if (!user) {
       return NextResponse.json({ success: false, error: "Sesión expirada. Por favor inicia sesión de nuevo." }, { status: 401 });
@@ -106,11 +98,10 @@ export async function POST(req: Request) {
     // 2. Extraer el body de la petición
     const body = await req.json();
 
-    // 3. Validar la estructura de datos con Zod de forma estricta
+    // 3. Validar la estructura de datos con Zod
     const result = crearEventoSchema.safeParse(body);
 
     if (!result.success) {
-      // Mapeamos los errores de Zod en una sola cadena amigable para el frontend
       const errorMessages = result.error.issues
         .map((issue) => issue.message)
         .join(", ");
@@ -118,16 +109,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: errorMessages }, { status: 400 });
     }
 
-    // 4. Datos limpios, parseados y validados por Zod (Añadido 'capacity' aquí 🌟)
+    // 4. Extraer datos limpios (¡Con 'capacity' incluido! 🌟)
     const { name, description, date, location, locationUrl, isPublic, capacity } = result.data;
     let accessCode = result.data.accessCode;
 
-    // Validación de lógica de negocio adicional (Código requerido si es privado)
     if (!isPublic && !accessCode) {
       return NextResponse.json({ success: false, error: "Los eventos privados requieren obligatoriamente un código de acceso." }, { status: 400 });
     }
 
-    // Sanitizar textos antes de persistir en base de datos para prevenir XSS vectorizados
     const sanitizedName = sanitizeText(name);
     const sanitizedDescription = description ? sanitizeText(description) : null;
     const sanitizedLocation = sanitizeText(location);
@@ -146,7 +135,7 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // 6. Generación segura de número de evento (Previene colisiones)
+    // 6. Generación segura de número de evento
     const year = new Date().getFullYear();
     let eventNumber = "";
     let counter = 1000;
@@ -160,7 +149,7 @@ export async function POST(req: Request) {
       counter++;
     }
 
-    // 7. Generación segura de Slug único basado en el nombre limpio
+    // 7. Generación segura de Slug único
     let slug = sanitizedName
       .toLowerCase()
       .normalize("NFD")
@@ -175,17 +164,17 @@ export async function POST(req: Request) {
       slugCounter++;
     }
 
-    // 8. Inserción Segura en la Base de Datos con Prisma
+    // 8. Inserción Segura en la Base de Datos con Prisma (Guardando 'capacity' 🌟)
     const event = await prisma.event.create({
       data: {
         name: sanitizedName,
         description: sanitizedDescription,
-        date: date, // Ya es un objeto Date gracias a Zod
+        date: date,
         location: sanitizedLocation,
         locationUrl: sanitizedLocationUrl,
         isPublic,
         accessCode: sanitizedAccessCode,
-        capacity: capacity || null, // Guardamos la capacidad parseada 🌟
+        capacity: capacity || null, 
         eventNumber,
         isActive: false,
         paymentStatus: "PENDING",

@@ -49,13 +49,18 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Ejecutar la validación de Zod de forma segura
-    const result = registroSchema.safeParse(body);
+    // 2. Validar con Zod de forma estricta
+const result = registroSchema.safeParse(body);
 
-    // Si Zod detecta campos inválidos, responderemos con estatus 400 y el mensaje exacto
-    if (!result.success) {
-      const errorMessages = result.error.errors.map(err => err.message).join(", ");
-      return NextResponse.json({ error: errorMessages }, { status: 400 });
-    }
+// Si la validación falla, retornamos el error de forma segura sin romper con .map
+if (!result.success) {
+  // 🌟 Usamos result.error.issues que es el estándar oficial y seguro de Zod
+  const errorMessages = result.error.issues
+    .map((issue) => issue.message)
+    .join(", ");
+
+  return NextResponse.json({ error: errorMessages }, { status: 400 });
+}
 
     // Datos limpios y totalmente validados por Zod
     const { name, email, company, phone, eventId } = result.data;
@@ -147,16 +152,16 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    // 🌟 Imprime el error real en tu terminal/consola de Vercel para saber exactamente qué falló
-    console.error("❌ ERROR INTERNO DEL SERVIDOR:", error);
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
-    }
-    
-    return NextResponse.json({ 
-      error: "Ocurrió un error interno al procesar tu registro.",
-      details: error.message || error
-    }, { status: 500 });
+  console.error("❌ Error en API de registro:", error);
+  
+  if (error.code === 'P2002') {
+    return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
   }
+  
+  // 🌟 Agregamos el error real en la respuesta para que no pases horas adivinando si vuelve a pasar
+  return NextResponse.json({ 
+    error: "Ocurrió un error interno al procesar tu registro.",
+    details: error.message || error
+  }, { status: 500 });
+}
 }

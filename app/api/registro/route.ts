@@ -1,6 +1,7 @@
 // app/api/registro/route.ts
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; // 🌟 Importamos NextRequest para rastrear la IP
+import { registroRateLimiter } from "@/lib/ratelimit";   // 🌟 Importamos tu escudo de Upstash
 // @ts-ignore
 import QRCode from 'qrcode';
 import { Resend } from 'resend';
@@ -28,7 +29,6 @@ const registroSchema = z.object({
       message: "El correo debe incluir una terminación de dominio válida (ejemplo: .com, .mx)"
     }),
 
-  // Modificados para procesar correctamente si el usuario los envía vacíos o nulos
   company: z.preprocess(
     (val) => (val === null || val === undefined ? "" : String(val).trim()),
     z.string().max(100, "El nombre de la empresa es demasiado largo")
@@ -44,23 +44,47 @@ const registroSchema = z.object({
   ).optional().nullable()
 });
 
-export async function POST(request: Request) {
+// 🌟 Cambiamos 'Request' por 'NextRequest' para el soporte de headers de Upstash
+export async function POST(request: NextRequest) {
   try {
+    // 🛡️ ==================== ESCUDO DE RATE LIMITING ====================
+    // Extraemos la IP real del cliente suministrada por la infraestructura de Vercel
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    
+    // Evaluamos los límites en Upstash Redis
+    const { success, limit, reset, remaining } = await registroRateLimiter.limit(ip);
+    
+    // Si superó los 5 intentos por minuto, cortamos la petición aquí mismo
+    if (!success) {
+      return NextResponse.json(
+        { 
+          error: "Demasiados intentos de registro. Por seguridad, tu dirección IP ha sido bloqueada temporalmente. Por favor, intenta de nuevo en un minuto." 
+        }, 
+        { 
+          status: 429, // HTTP 429: Too Many Requests
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+          }
+        }
+      );
+    }
+    // ====================================================================
+
     const body = await request.json();
 
-    // Ejecutar la validación de Zod de forma segura
-    // 2. Validar con Zod de forma estricta
-const result = registroSchema.safeParse(body);
+    // Validar con Zod de forma estricta
+    const result = registroSchema.safeParse(body);
 
-// Si la validación falla, retornamos el error de forma segura sin romper con .map
-if (!result.success) {
-  // 🌟 Usamos result.error.issues que es el estándar oficial y seguro de Zod
-  const errorMessages = result.error.issues
-    .map((issue) => issue.message)
-    .join(", ");
+    // Si la validación falla, retornamos el error de forma segura
+    if (!result.success) {
+      const errorMessages = result.error.issues
+        .map((issue) => issue.message)
+        .join(", ");
 
-  return NextResponse.json({ error: errorMessages }, { status: 400 });
-}
+      return NextResponse.json({ error: errorMessages }, { status: 400 });
+    }
 
     // Datos limpios y totalmente validados por Zod
     const { name, email, company, phone, eventId } = result.data;
@@ -152,16 +176,15 @@ if (!result.success) {
     });
 
   } catch (error: any) {
-  console.error("❌ Error en API de registro:", error);
-  
-  if (error.code === 'P2002') {
-    return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
+    console.error("❌ Error en API de registro:", error);
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
+    }
+    
+    return NextResponse.json({ 
+      error: "Ocurrió un error interno al procesar tu registro.",
+      details: error.message || error
+    }, { status: 500 });
   }
-  
-  // 🌟 Agregamos el error real en la respuesta para que no pases horas adivinando si vuelve a pasar
-  return NextResponse.json({ 
-    error: "Ocurrió un error interno al procesar tu registro.",
-    details: error.message || error
-  }, { status: 500 });
-}
 }

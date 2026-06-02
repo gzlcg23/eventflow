@@ -9,6 +9,7 @@ import { z } from 'zod'; // 🌟 Importamos Zod
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ==================== ESQUEMA DE VALIDACIÓN CORREGIDO (ZOD) ====================
+// Asegúrate de que el schema no contenga variables indefinidas o errores tipográficos
 const registroSchema = z.object({
   eventId: z.string().min(1, "El ID del evento es requerido"),
   
@@ -16,7 +17,6 @@ const registroSchema = z.object({
     .min(3, "El nombre debe tener al menos 3 caracteres")
     .max(70, "El nombre es demasiado largo")
     .transform(val => val.trim())
-    // 🌟 Mensaje personalizado si no ponen nombre y apellido
     .refine(val => val.split(/\s+/).filter(Boolean).length >= 2, {
       message: "Por favor, ingresa al menos un nombre y un apellido"
     }),
@@ -25,8 +25,6 @@ const registroSchema = z.object({
     .email("El formato de correo electrónico no es válido")
     .max(100, "El correo es demasiado largo")
     .transform(val => val.toLowerCase().trim())
-    // 🌟 Forzar terminación de dominio válida (ej: .com, .com.mx, .net)
-    // Evita que escriban cosas incompletas como "usuario@dominio." o "usuario@dominio.c"
     .refine(val => /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,6}(\.[a-zA-Z]{2,6})?$/.test(val), {
       message: "El correo debe incluir una terminación de dominio válida (ejemplo: .com, .mx)"
     }),

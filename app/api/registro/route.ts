@@ -6,6 +6,7 @@ import { registroRateLimiter } from "@/lib/ratelimit";
 import QRCode from 'qrcode';
 import { Resend } from 'resend';
 import { z } from 'zod';
+import { createAuditLog } from "@/lib/audit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Crear el asistente si pasó el filtro de capacidad
+    // ... Código anterior de tu API de registro (Donde creas al asistente) ...
     const attendee = await prisma.attendee.create({
       data: {
         name,
@@ -122,7 +124,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generación del código QR
+    // 🌟 INYECTAMOS EL HISTORIAL DE AUDITORÍA AQUÍ:
+    await createAuditLog({
+      action: "ATTENDEE_REGISTER",
+      entity: "ATTENDEE",
+      entityId: attendee.id,
+      ipAddress: ip, // La variable 'ip' que ya extraes al inicio para el Rate Limit
+      details: `Nuevo registro exitoso para el evento "${event.name}". Asistente: ${name} (${email})`
+    });
+
+    // Generación del código QR y envío con Resend...
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://registros.redspace.mx';
     const qrUrl = `${baseUrl}/checkin/${attendee.qrCode}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });

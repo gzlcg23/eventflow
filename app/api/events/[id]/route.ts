@@ -4,6 +4,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // ==================== ACTUALIZAR EVENTO (BLINDADO) ====================
+// app/api/events/[id]/route.ts
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,7 +18,7 @@ export async function PUT(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 1. Validar que el evento exista y pertenezca al usuario antes de modificarlo (Protección IDOR)
+    // 1. Validar propiedad del evento (IDOR)
     const event = await prisma.event.findUnique({
       where: { id },
       select: { userId: true }
@@ -40,12 +42,20 @@ export async function PUT(
     const date = formData.get("date") as string;
     const location = formData.get("location") as string;
     const locationUrl = formData.get("locationUrl") as string;
-    const isPublic = formData.get("isPublic") === "true";
     const accessCode = formData.get("accessCode") as string;
+    const capacityRaw = formData.get("capacity") as string;
+
+    // 🌟 NORMALIZACIÓN DEL BOOLEANO ISPUBLIC
+    // Esto evalúa de forma segura si viene como string "true", booleano true, o el número 1.
+    const isPublicRaw = formData.get("isPublic");
+    const isPublic = isPublicRaw === "true" || isPublicRaw === "1" || isPublicRaw === true;
 
     if (!name || !date) {
       return NextResponse.json({ error: "Nombre y fecha son obligatorios" }, { status: 400 });
     }
+
+    // Procesar la capacidad por si también la editan desde aquí
+    const capacity = capacityRaw && capacityRaw.trim() !== "" ? parseInt(capacityRaw, 10) : null;
 
     const updatedEvent = await prisma.event.update({
       where: { id },
@@ -56,12 +66,13 @@ export async function PUT(
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
         isPublic,
+        // Si cambia a público, destruimos el accessCode para que no pida contraseña por error
         accessCode: !isPublic && accessCode ? accessCode.trim().toUpperCase() : null,
+        capacity: isNaN(capacity as number) ? null : capacity,
       },
     });
 
-    // 🪵 Log de auditoría básico en consola del servidor
-    console.log(`📝 Evento editado por el usuario [${user.email}]: ${updatedEvent.name}`);
+    console.log(`📝 Evento editado por [${user.email}]: ${updatedEvent.name} | Público: ${updatedEvent.isPublic}`);
 
     return NextResponse.json({ success: true, event: updatedEvent });
 

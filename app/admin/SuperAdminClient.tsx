@@ -400,8 +400,19 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     } else {
       alert("Error al eliminar permanentemente");
     }
-  };
+  }; // <-- Aquí termina tu función deletePermanently limpia
 
+  // 🌟 EL CANDADO DE SEGURIDAD PARA ELIMINAR EL ERROR #418 DE RAÍZ:
+  if (!mounted) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="h-10 bg-slate-100 rounded-xl w-1/4"></div>
+        <div className="h-64 bg-slate-50 rounded-2xl"></div>
+      </div>
+    );
+  }
+
+  // Tu return principal con suppressHydrationWarning se queda justo abajo:
   return (
     <div className="space-y-8" suppressHydrationWarning>
       {/* Modal */}

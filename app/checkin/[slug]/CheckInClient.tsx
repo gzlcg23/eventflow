@@ -106,33 +106,35 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     doc.save(`${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.pdf`);
   };
 
-  const handleCheckIn = async (attendeeId: string) => {
+  const handleCheckIn = async (qrCode: string) => { // 🌟 Ahora recibe el código QR
     if (isEventFinished) {
       setMessage({ type: 'error', text: "Este evento ya finalizó. No se pueden hacer más check-ins." });
       return;
     }
 
     try {
-      const res = await fetch('/api/checkin', {
+      // 🌟 Apuntamos a la nueva API pasándole el código QR y el ID del Evento
+      const res = await fetch('/api/registro/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attendeeId }),
+        body: JSON.stringify({ qrCode, eventId: event.id }),
       });
 
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
         setAttendees(prev => prev.map(a => 
-          a.id === attendeeId 
+          a.qrCode === qrCode 
             ? { ...a, status: 'CHECKED_IN', checkedInAt: new Date() } 
             : a
         ));
-        setMessage({ type: 'success', text: `✅ Check-in: ${data.attendee.name}` });
+        setMessage({ type: 'success', text: `✅ Check-in exitoso: ${data.attendee.name}` });
       } else {
-        setMessage({ type: 'error', text: data.error });
+        // Muestra el error estructurado de la API (ej: Si el pase ya fue usado)
+        setMessage({ type: 'error', text: data.error || "No se pudo procesar el acceso" });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: "Error al procesar check-in" });
+      setMessage({ type: 'error', text: "Error de red al procesar check-in" });
     }
   };
 
@@ -164,17 +166,14 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         scanner.clear();
         setScanning(false);
 
+        // Extraemos el código único del QR de la URL decodificada
         const qrCode = decodedText.split('/').pop();
-        const attendee = attendees.find(a => a.qrCode === qrCode);
 
-        if (attendee) {
-          if (attendee.status === 'CHECKED_IN') {
-            setMessage({ type: 'success', text: `⚠️ Ya tenía check-in: ${attendee.name}` });
-          } else {
-            await handleCheckIn(attendee.id);
-          }
+        if (qrCode) {
+          // 🌟 Disparamos directo a la API usando el código QR
+          await handleCheckIn(qrCode);
         } else {
-          setMessage({ type: 'error', text: "QR no encontrado" });
+          setMessage({ type: 'error', text: "Código QR inválido" });
         }
 
         setTimeout(() => setScanning(true), 1800);
@@ -296,7 +295,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
                   </div>
                 ) : (
                   <button
-                    onClick={() => handleCheckIn(attendee.id)}
+                    onClick={() => handleCheckIn(attendee.qrCode)}
                     disabled={isEventFinished}
                     className={`flex items-center justify-center w-11 h-11 rounded-xl transition ${isEventFinished ? 'text-gray-500 cursor-not-allowed' : 'text-amber-500 hover:bg-amber-500/10'}`}
                     title="Hacer Check-in Manual"

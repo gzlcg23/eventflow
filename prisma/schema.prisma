@@ -40,6 +40,7 @@ model Event {
 
   isPublic          Boolean  @default(true)
   accessCode        String?
+  capacity          Int?
   isActive          Boolean  @default(false)
   paymentStatus     String   @default("PENDING")
   paymentAmount     Decimal?

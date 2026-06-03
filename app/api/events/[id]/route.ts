@@ -38,7 +38,12 @@ export async function PUT(
     }
 
     const formData = await request.formData();
+    
+    // 🌟 METE ESTA LÍNEA DE LOG TEMPORAL:
+    console.log("DEBUG FRONTEND -> ¿Qué está llegando al servidor?:", Object.fromEntries(formData.entries()));
+
     const name = formData.get("name") as string;
+    // ... el resto de tu código
     const description = formData.get("description") as string;
     const date = formData.get("date") as string;
     const location = formData.get("location") as string;

@@ -37,14 +37,14 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // B. Proteger todas las demás rutas privadas con Clerk
   await auth.protect();
 
-  // C. Filtro inteligente para la protección CSRF manual (Solo métodos mutantes)
-  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
     
-    // REGLA DE ORO: Si la petición va a nuestras APIs optimizadas, NO le exijas CSRF token
+    // REGLA DE ORO: Si la petición va a nuestras APIs optimizadas o de administración protegida por Clerk, NO le exijas CSRF token
     const isExemptedApi = pathname.startsWith('/api/checkin') || 
                           pathname.startsWith('/api/registro') || 
                           pathname.startsWith('/api/events') || 
-                          pathname.startsWith('/api/eventos');
+                          pathname.startsWith('/api/eventos') ||
+                          pathname.startsWith('/api/admin'); // 🌟 PARCHE DE ORO: Exentar las llamadas de administración
 
     // Si está en las páginas protegidas o es cualquier OTRA api que no esté exenta, validamos token
     if (isCsrfProtectedPage(req) || (pathname.startsWith('/api/') && !isExemptedApi)) {

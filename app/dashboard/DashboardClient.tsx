@@ -6,9 +6,11 @@ import { Users, CheckCircle, Calendar, TrendingUp, Download, FileText } from 'lu
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, differenceInDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+
+
 
 interface DashboardClientProps {
   events: any[];
@@ -63,11 +65,9 @@ export default function DashboardClient({
   ];
 
   // Exportar CSV General
-  // Exportar PDF General - Versión Minimalista Avanzada (Estilo Red Space / EventFlow)
+ // Exportar PDF General - Versión Minimalista Avanzada (Estilo Red Space / EventFlow)
   const exportAllPDF = () => {
-    const { jsPDF } = require('jspdf');
-    require('jspdf-autotable');
-
+    // 🌟 Eliminamos los require internos para evitar problemas de compilación en el cliente
     const doc = new jsPDF('p', 'mm', 'a4');
     
     // --- ESTILOS TIPOGRÁFICOS GLOBALES ---
@@ -103,7 +103,6 @@ export default function DashboardClient({
     doc.line(16, 36, 194, 36);
 
     // --- BLOQUES DE RENDIMIENTO (DASHBOARD METRICS) ---
-    // Dibujamos un rectángulo gris de fondo para el sumario
     doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
     doc.rect(16, 42, 178, 22, "F");
 
@@ -138,7 +137,6 @@ export default function DashboardClient({
 
     // --- ITERACIÓN DE EVENTOS EN TABLAS MINIMALISTAS ---
     filteredEvents.forEach((event, index) => {
-      // Verificar si nos estamos quedando sin espacio abajo en la página actual
       if (currentY > 240) {
         doc.addPage();
         currentY = 24;
@@ -148,7 +146,6 @@ export default function DashboardClient({
       doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
       doc.rect(16, currentY, 178, 8, "F");
       
-      // Detalle lateral de la barra (borde brutalista izquierdo)
       doc.setFillColor(0, 0, 0);
       doc.rect(16, currentY, 1.5, 8, "F");
 
@@ -165,7 +162,6 @@ export default function DashboardClient({
 
       currentY += 12;
 
-      // Estructuramos la data del evento actual
       const tableData = event.attendees.map((a: any) => [
         a.name,
         a.email,
@@ -174,8 +170,8 @@ export default function DashboardClient({
         a.status === 'CHECKED_IN' ? '✓ CHECK-IN' : 'REGISTRADO'
       ]);
 
-      // Render de la tabla usando la API de autoTable de forma limpia
-      doc.autoTable({
+      // 🌟 CAMBIO CLAVE AQUÍ: Usamos la función autoTable directa, pasándole el objeto 'doc'
+      autoTable(doc, {
         body: tableData,
         columns: [
           { header: 'Nombre', dataKey: 'name' },
@@ -186,7 +182,7 @@ export default function DashboardClient({
         ],
         startY: currentY,
         margin: { left: 16, right: 16 },
-        theme: 'plain', // Eliminamos cajas pesadas corporativas
+        theme: 'plain',
         styles: {
           font: 'helvetica',
           fontSize: 8.5,
@@ -194,39 +190,40 @@ export default function DashboardClient({
           textColor: [45, 55, 72]
         },
         headStyles: {
-          fillColor: [26, 32, 44], // Encabezado oscuro plano
+          fillColor: [26, 32, 44],
           textColor: [255, 255, 255],
           fontSize: 8,
           fontStyle: 'bold'
         },
         alternateRowStyles: {
-          fillColor: [252, 253, 253] // Zebra striping ultra tenue
+          fillColor: [252, 253, 253]
         },
         didParseCell: function (data) {
-          // Cambiar dinámicamente el estilo del texto si es CHECK-IN para dar relieve visual limpio
           if (data.section === 'body' && data.column.index === 4) {
             if (data.cell.raw === '✓ CHECK-IN') {
               data.cell.styles.fontStyle = 'bold';
-              data.cell.styles.textColor = [4, 116, 129]; // Color verde azulado de éxito sutil
+              data.cell.styles.textColor = [4, 116, 129];
             } else {
               data.cell.styles.textColor = [113, 128, 150];
             }
           }
-        },
-        afterPageContent: function (data) {
-          // Numeración de páginas integrada
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(8);
-          doc.setTextColor(160, 174, 192);
-          doc.text(`Pág. ${doc.internal.getNumberOfPages()}`, 194, 285, { align: "right" });
         }
       });
 
-      // El siguiente elemento arranca después de donde terminó la tabla
-      currentY = doc.lastAutoTable.finalY + 14;
+      // Obtener el final de la última tabla usando la propiedad nativa del documento
+      currentY = (doc as any).lastAutoTable.finalY + 14;
     });
 
-    // Guardar archivo final
+    // Agregar numeración de páginas en lote al final para garantizar exactitud
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(160, 174, 192);
+      doc.text(`Pág. ${i} de ${totalPages}`, 194, 285, { align: "right" });
+    }
+
     doc.save(`Reporte_Impacto_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
 

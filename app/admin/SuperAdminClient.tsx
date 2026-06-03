@@ -24,6 +24,31 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deactivationReason, setDeactivationReason] = useState("");
 
+
+  export default function SuperAdminClient({ events: initialEvents }: { events: any[] }) {
+  // 🌟 AQUI AGREGAS ESTO PARA REPARAR EL ERROR #418
+  const [mounted, setMounted] = useState(false);
+
+  // Tus estados actuales se quedan exactamente igual abajo:
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "archived">("all");
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
+
+  // Paginación
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Modal de razón
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [deactivationReason, setDeactivationReason] = useState("");
+
+  // 🌟 AQUI DISPARAS EL EFECTO DE MONTAJE (Ponlo justo aquí)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+
     const filteredEvents = useMemo(() => {
     let result = [...initialEvents];
 
@@ -59,6 +84,9 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
         }
       });
     }
+
+    // 🌟 AQUÍ VA LA LÍNEA PARA EVITAR QUE LA TABLA SE QUEDE VACÍA AL FILTRAR
+    setCurrentPage(1);
 
     return result;
   }, [initialEvents, searchTerm, statusFilter, periodFilter]);
@@ -387,6 +415,26 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       alert("Error al eliminar permanentemente");
     }
   };
+  if (res.ok) {
+      alert("Evento eliminado permanentemente.");
+      window.location.reload();
+    } else {
+      alert("Error al eliminar permanentemente");
+    }
+  };
+
+  // 🌟 AQUÍ INTERCEPTAS EL RENDER ANTES DEL RETURN PRINCIPAL
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-xs uppercase tracking-widest text-slate-400 animate-pulse font-mono">
+          Cargando panel de administración central...
+        </p>
+      </div>
+    );
+  }
+
+  // Tu return actual se queda exactamente igual:
   return (
     <div className="space-y-8">
       {/* Modal */}

@@ -1,6 +1,6 @@
 // app/terminos/page.tsx
 // Cambia esto en los tres archivos:
-import Footer from "../../components/Footer";
+import Footer from "../components/Footer";
 export default function TerminosPage() {
   return (
     <div className="min-h-screen bg-black text-zinc-300 flex flex-col justify-between selection:bg-zinc-800 selection:text-white">

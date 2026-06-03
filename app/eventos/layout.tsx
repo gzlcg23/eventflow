@@ -1,5 +1,5 @@
 // app/eventos/layout.tsx
-import Footer from "../../components/Footer"; // 🌟 Ajusta la ruta relativa si tu carpeta components está en otro lado
+import Footer from "../components/Footer"; // 🌟 Ajusta la ruta relativa si tu carpeta components está en otro lado
 
 export default function DashboardLayout({
   children,

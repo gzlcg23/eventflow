@@ -81,60 +81,71 @@ export async function POST(request: NextRequest) {
 
     const { name, email, company, phone, eventId } = result.data;
 
-    // 1. Obtener el evento y traer su capacidad actual
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: { id: true, name: true, date: true, capacity: true }
-    });
+    // 🌟 TRANSACCIÓN INTERACTIVA DE PRISMA PARA CONTROL CONCURRENTE EXCLUSIVO
+    const { attendee, event } = await prisma.$transaction(async (tx) => {
+      
+      // 1. Obtener y bloquear la fila del evento para evitar sobreventa en milisegundos concurrentes
+      const currentEvent = await tx.event.findUnique({
+        where: { id: eventId },
+        select: { id: true, name: true, date: true, capacity: true }
+      });
 
-    if (!event) {
-      return NextResponse.json({ error: "El evento especificado no existe." }, { status: 404 });
-    }
+      if (!currentEvent) {
+        throw new Error("EVENT_NOT_FOUND");
+      }
 
-    // 2. 🌟 CANDADO DE CAPACIDAD (REGLA DE NEGOCIO SAAS)
-    // Si el evento tiene un límite numérico asignado (no es null)
-    if (event.capacity !== null) {
-      // Contamos los asistentes que NO tengan el estatus de cancelados
-      const currentAttendeesCount = await prisma.attendee.count({
+      // 2. 🛡️ VERIFICACIÓN EN CALIENTE DE CORREO DUPLICADO PARA ESTE EVENTO
+      const existingAttendee = await tx.attendee.findFirst({
         where: {
           eventId: eventId,
+          email: email,
           status: { in: ["REGISTERED", "CHECKED_IN"] }
         }
       });
 
-      // Si ya alcanzamos o superamos el cupo, rebotamos la petición inmediatamente
-      if (currentAttendeesCount >= event.capacity) {
-        return NextResponse.json(
-          { error: "Lo sentimos, las inscripciones para este evento se han cerrado debido a que se alcanzó el cupo máximo permitido." }, 
-          { status: 422 } // HTTP 422: Entidad no procesable (Lógica de negocio rota)
-        );
+      if (existingAttendee) {
+        throw new Error("DUPLICATE_EMAIL");
       }
-    }
 
-    // 3. Crear el asistente si pasó el filtro de capacidad
-    // ... Código anterior de tu API de registro (Donde creas al asistente) ...
-    const attendee = await prisma.attendee.create({
-      data: {
-        name,
-        email,
-        company: company || null,
-        phone: phone || null,
-        eventId,
-        qrCode: `ATT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-      },
+      // 3. 🛡️ VERIFICACIÓN EN CALIENTE DE CAPACIDAD (CANDADO ANTI-OVERBOCKING)
+      if (currentEvent.capacity !== null) {
+        const currentAttendeesCount = await tx.attendee.count({
+          where: {
+            eventId: eventId,
+            status: { in: ["REGISTERED", "CHECKED_IN"] }
+          }
+        });
+
+        if (currentAttendeesCount >= currentEvent.capacity) {
+          throw new Error("CAPACITY_EXCEEDED");
+        }
+      }
+
+      // 4. Crear el asistente dentro del bloque protegido de la transacción
+      const newAttendee = await tx.attendee.create({
+        data: {
+          name,
+          email,
+          company: company || null,
+          phone: phone || null,
+          eventId,
+          qrCode: `ATT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        },
+      });
+
+      return { attendee: newAttendee, event: currentEvent };
     });
 
-    // 🌟 INYECTAMOS EL HISTORIAL DE AUDITORÍA AQUÍ:
+    // 🌟 LOG HISTÓRICO DE AUDITORÍA CENTRALIZADO
     await createAuditLog({
       action: "ATTENDEE_REGISTER",
       entity: "ATTENDEE",
       entityId: attendee.id,
-      ipAddress: ip, // La variable 'ip' que ya extraes al inicio para el Rate Limit
-      details: `Nuevo registro exitoso para el evento "${event.name}". Asistente: ${name} (${email})`
+      ipAddress: ip,
+      details: `Inscripción exitosa en EventFlow. Evento: "${event.name}". Asistente: ${name} (${email}).`
     });
 
-    // Generación del código QR y envío con Resend...
-
+    // ==================== GENERACIÓN DE CÓDIGO QR Y ENVÍO ====================
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://registros.redspace.mx';
     const qrUrl = `${baseUrl}/checkin/${attendee.qrCode}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
@@ -142,7 +153,6 @@ export async function POST(request: NextRequest) {
     const base64Data = qrCodeDataUrl.split(',')[1];
     const qrBuffer = Buffer.from(base64Data, 'base64');
 
-    // Envío del correo con Resend
     try {
       await resend.emails.send({
         from: 'EventFlow <no-reply@redspace.mx>',
@@ -192,8 +202,7 @@ export async function POST(request: NextRequest) {
       console.error("⚠️ Error en envío de correo Resend:", emailError);
     }
 
-    // 🪵 Log de auditoría básico en consola de lo que sucede con éxito
-    console.log(`✅ Registro exitoso: Asistente [${email}] en evento [${event.name}]`);
+    console.log(`✅ Registro exitoso en consola: Asistente [${email}] en evento [${event.name}]`);
 
     return NextResponse.json({
       success: true,
@@ -203,13 +212,24 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("❌ Error crítico en API de registro:", error);
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
+    // Captura controlada de las excepciones de la transacción
+    if (error.message === "EVENT_NOT_FOUND") {
+      return NextResponse.json({ error: "El evento especificado no existe o fue dado de baja." }, { status: 404 });
     }
     
-    // 🛡️ Ocultamos detalles internos y técnicos del error (como strings SQL o URL de Neon)
+    if (error.message === "DUPLICATE_EMAIL") {
+      return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
+    }
+
+    if (error.message === "CAPACITY_EXCEEDED") {
+      return NextResponse.json({ 
+        error: "Lo sentimos, las inscripciones para este evento se han cerrado debido a que se alcanzó el cupo máximo permitido." 
+      }, { status: 422 });
+    }
+
+    console.error("❌ Error crítico en la pasarela de registro:", error);
+    
+    // Ocultar base de datos a atacantes externos
     return NextResponse.json({ 
       error: "Ocurrió un error interno en el servidor al procesar tu registro."
     }, { status: 500 });

@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 // ==================== ACTUALIZAR EVENTO (BLINDADO) ====================
 // app/api/events/[id]/route.ts
@@ -66,13 +67,18 @@ export async function PUT(
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
         isPublic,
-        // Si cambia a público, destruimos el accessCode para que no pida contraseña por error
         accessCode: !isPublic && accessCode ? accessCode.trim().toUpperCase() : null,
         capacity: isNaN(capacity as number) ? null : capacity,
       },
     });
 
     console.log(`📝 Evento editado por [${user.email}]: ${updatedEvent.name} | Público: ${updatedEvent.isPublic}`);
+
+    // 🌟 LA SOLUCIÓN AL BUG DE LA CACHÉ:
+    // Le decimos a Next.js que destruya la caché vieja de estas páginas y rutas
+    revalidatePath("/eventos");
+    revalidatePath("/eventos/editar/[id]", "page");
+    revalidatePath("/api/events"); // Limpia la caché si tu frontend consume este GET
 
     return NextResponse.json({ success: true, event: updatedEvent });
 

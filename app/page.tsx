@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { ArrowRight, Users, QrCode, BarChart3, ShieldCheck, Calendar } from "lucide-react";
-import Footer from "@/components/Footer"; // 🌟 Importamos el nuevo Footer
+// Cambia esto en los tres archivos:
+import Footer from "./components/Footer"; // Si estás en privacidad/terminos sería "../../components/Footer"
 
 export default async function HomePage() {
   const user = await currentUser();

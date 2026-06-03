@@ -67,6 +67,13 @@ export async function PUT(
 
     const capacity = capacityRaw && capacityRaw.trim() !== "" ? parseInt(capacityRaw, 10) : null;
 
+    // 1. Forzar que la variable sea un booleano primitivo puro
+    const isPublicBoolean = Boolean(isPublic);
+
+    // 2. Determinar el código de acceso antes de meterlo a la query
+    // Si es público, forzamos de forma implícita un null independiente
+    const finalAccessCode = !isPublicBoolean && accessCode ? accessCode.trim().toUpperCase() : null;
+
     const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
@@ -75,15 +82,19 @@ export async function PUT(
         date: new Date(date),
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
-        isPublic: isPublic, // 🌟 Forzado aquí
-        accessCode: !isPublic && accessCode ? accessCode.trim().toUpperCase() : null,
-        capacity: isNaN(capacity as number) ? null : capacity,
+        
+        // 🌟 Forzamos el valor primitivo exacto
+        isPublic: isPublicBoolean, 
+        accessCode: finalAccessCode,
+        
+        capacity: capacity !== null && !isNaN(capacity) ? capacity : null,
       },
     });
 
-    // Este log nos va a cantar la verdad absoluta ahora mismo
-    console.log(`🪵 LOG DURO -> Valor procesado final:`, isPublic, `| Tipo:`, typeof isPublic);
-    console.log(`📝 Evento editado en BDD: ${updatedEvent.name} | Público en BDD: ${updatedEvent.isPublic}`);
+    // Logs de confirmación absoluta post-mutación
+    console.log(`👁️ REVISIÓN BDD POST-UPDATE -> ID: ${id}`);
+    console.log(`IsPublic enviado: ${isPublicBoolean} | Guardado en BDD: ${updatedEvent.isPublic}`);
+    console.log(`AccessCode guardado: ${updatedEvent.accessCode}`);
 
     revalidatePath("/eventos");
     revalidatePath(`/eventos/editar/${id}`);

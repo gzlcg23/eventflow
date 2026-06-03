@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { ArrowRight, Users, QrCode, BarChart3, ShieldCheck, Calendar } from "lucide-react";
+import Footer from "@/components/Footer"; // 🌟 Importamos el nuevo Footer
 
 export default async function HomePage() {
   const user = await currentUser();
@@ -13,7 +14,8 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col justify-between">
+      
       {/* Hero Section Mejorado */}
       <div className="pt-28 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
@@ -51,8 +53,8 @@ export default async function HomePage() {
         </div>
       </div>
 
-            {/* Tutorial Gráfico - Cómo usar EventFlow */}
-      <div className="py-20 bg-white border-t">
+      {/* Tutorial Gráfico - Cómo usar EventFlow */}
+      <div className="py-20 bg-white border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">¿Cómo funciona EventFlow?</h2>
@@ -122,14 +124,8 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-16">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-2xl font-bold text-white mb-2">EventFlow</p>
-          <p className="text-sm">Gestión inteligente de eventos • Hecho con ❤️ en México</p>
-          <p className="text-xs text-gray-500 mt-8">© 2026 EventFlow. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      {/* 🌟 Footer Profesional Adaptado */}
+      <Footer variant="light" />
     </div>
   );
 }

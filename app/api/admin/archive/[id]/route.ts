@@ -1,4 +1,5 @@
-// app/api/admin/archive/[id]/route.ts
+// 🌟 ESTA ES LA LÍNEA CRUCIAL QUE FALTABA:
+import { prisma } from "@/lib/prisma"; 
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { generateEventArchive } from "@/lib/archive";
@@ -24,11 +25,11 @@ export async function GET(
       return NextResponse.json({ error: "Solo Super Admin puede archivar eventos" }, { status: 403 });
     }
 
-    // 🔍 AUDITORÍA PREVIA: Verificar si el evento existe y qué tiene antes de llamar a la librería
+    // Auditoría previa: Verificar si el evento existe
     const eventCheck = await prisma.event.findUnique({
       where: { id },
       include: {
-        _count: true // Esto nos dice cuántas relaciones (asistentes/registros) tiene
+        _count: true
       }
     });
 
@@ -51,7 +52,6 @@ export async function GET(
     });
 
   } catch (error: any) {
-    // 🚨 LOG ULTRA DETALLADO PARA VER EN VERCEL RUNTIME LOGS:
     console.error("❌ ERROR CRÍTICO GENERANDO ZIP:", {
       message: error.message,
       stack: error.stack,

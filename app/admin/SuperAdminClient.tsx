@@ -401,18 +401,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       alert("Error al eliminar permanentemente");
     }
   };
-  if (res.ok) {
-      alert("Evento eliminado permanentemente.");
-      window.location.reload();
-    } else {
-      alert("Error al eliminar permanentemente");
-    }
-  };
 
-
-
-  // Tu return actual se queda exactamente igual:
-  // Tu return principal ahora debe verse exactamente así:
   return (
     <div className="space-y-8" suppressHydrationWarning>
       {/* Modal */}

@@ -1,7 +1,7 @@
 // app/admin/SuperAdminClient.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react'; // 🌟 Asegúrate de tener useEffect aquí
 import { Check, X, Lock, Unlock, Search, Download, Trash2 } from 'lucide-react';
 import { format, differenceInDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { jsPDF } from 'jspdf';
@@ -11,25 +11,10 @@ import * as XLSX from 'xlsx';
 const COSTO_POR_EVENTO = 1500;
 
 export default function SuperAdminClient({ events: initialEvents }: { events: any[] }) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "archived">("all");
-  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
-
-  // Paginación
-  const itemsPerPage = 10;
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Modal de razón
-  const [showModal, setShowModal] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [deactivationReason, setDeactivationReason] = useState("");
-
-
-  export default function SuperAdminClient({ events: initialEvents }: { events: any[] }) {
-  // 🌟 AQUI AGREGAS ESTO PARA REPARAR EL ERROR #418
+  // 🌟 EL ESTADO DE HYDRATION VA AQUÍ ABAJO
   const [mounted, setMounted] = useState(false);
 
-  // Tus estados actuales se quedan exactamente igual abajo:
+  // Tus estados actuales (Limpios, sin nada de "className" colado entre ellos):
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "archived">("all");
   const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | '7days' | '30days' | 'thisMonth' | 'thisYear'>('all');
@@ -43,11 +28,12 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deactivationReason, setDeactivationReason] = useState("");
 
-  // 🌟 AQUI DISPARAS EL EFECTO DE MONTAJE (Ponlo justo aquí)
+  // 🌟 EL EFECTO QUE CAMBIA EL ESTADO AL MONTAR:
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Aquí abajo continúa tu useMemo tal cual lo tenías...
 
     const filteredEvents = useMemo(() => {
     let result = [...initialEvents];

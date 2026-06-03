@@ -13,52 +13,53 @@ datasource db {
 // ======================
 
 model User {
-  id          String    @id @default(cuid())
-  clerkId     String    @unique
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
   email       String
   firstName   String?
   lastName    String?
   avatarUrl   String?
-  role        UserRole  @default(ORGANIZER)
+  role        UserRole @default(ORGANIZER)
 
   events      Event[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  auditLogs   AuditLog[] // 🌟 Relación añadida para tener el historial del usuario
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Event {
-  id                String   @id @default(cuid())
-  slug              String   @unique
-  eventNumber       String   @unique
-  name              String
-  description       String?
-  date              DateTime
-  endDate           DateTime?
-  location          String?
-  locationUrl       String?
-  bannerUrl         String?
+  id                 String    @id @default(cuid())
+  slug               String    @unique
+  eventNumber        String    @unique
+  name               String
+  description        String?
+  date               DateTime
+  endDate            DateTime?
+  location           String?
+  locationUrl        String?
+  bannerUrl          String?
 
-  isPublic          Boolean  @default(true)
-  accessCode        String?
-  capacity          Int?
-  isActive          Boolean  @default(false)
-  paymentStatus     String   @default("PENDING")
-  paymentAmount     Decimal?
+  isPublic           Boolean   @default(true)
+  accessCode         String?
+  capacity           Int?
+  isActive           Boolean   @default(false)
+  paymentStatus      String    @default("PENDING")
+  paymentAmount      Decimal?
   deactivationReason String?
-  activatedAt       DateTime?
-  paymentMethod     String?
-  paymentNotes      String?
+  activatedAt        DateTime?
+  paymentMethod      String?
+  paymentNotes       String?
 
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  attendees         Attendee[]
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  attendees          Attendee[]
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // ==================== CAMPOS PARA ARCHIVADO ====================
-  archived          Boolean  @default(false)
-  archivedAt        DateTime?
+  archived           Boolean   @default(false)
+  archivedAt         DateTime?
   // ============================================================
 }
 
@@ -93,4 +94,24 @@ enum AttendeeStatus {
   REGISTERED
   CHECKED_IN
   CANCELLED
+}
+
+// ============================================================
+// 🌟 NUEVO MODELO DE AUDITORÍA TOTAL
+// ============================================================
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // Ej: "EVENT_CREATE", "EVENT_UPDATE", "EVENT_DELETE", "ATTENDEE_REGISTER", "CHECKIN"
+  entity      String   // Ej: "EVENT", "ATTENDEE"
+  entityId    String?  // El ID del evento o asistente afectado
+  userId      String?  // ID interno de nuestro usuario (si aplica)
+  userEmail   String?  // Email de respaldo por si el usuario es removido
+  ipAddress   String?  // Dirección IP (crucial para auditorías de registros y prevención de fraudes)
+  details     String?  // Notas detalladas en texto libre o un stringificado de JSON
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([entity, entityId])
 }

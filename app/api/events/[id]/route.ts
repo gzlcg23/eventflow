@@ -1,13 +1,9 @@
 // app/api/events/[id]/route.ts
 import { prisma } from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-
-// ==================== ACTUALIZAR EVENTO (BLINDADO) ====================
-// app/api/events/[id]/route.ts
-
-// app/api/events/[id]/route.ts
+import { currentUser } from "@clerk/nextjs/server";
+import { revalidatePath } from "cache";
+import { createAuditLog } from "@/lib/audit"; // 🌟 Asegúrate de que esta línea esté arriba
 
 export async function PUT(
   request: Request,
@@ -21,25 +17,22 @@ export async function PUT(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 1. Validar propiedad del evento (IDOR)
+    // 1. Validar propiedad del evento e incluir al usuario de nuestra BDD de un solo golpe
     const event = await prisma.event.findUnique({
       where: { id },
-      select: { userId: true }
+      include: { user: true }
     });
 
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: clerkUser.id }
-    });
-
-    if (!user || user.id !== event.userId) {
+    // Validar que el usuario logueado en Clerk sea el dueño usando la relación
+    if (event.user.clerkId !== clerkUser.id) {
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
 
-    // 2. Extraer datos de FormData de forma ultra-segura
+    // 2. Extraer datos de FormData
     const formData = await request.formData();
     const rawEntries = Object.fromEntries(formData.entries());
 
@@ -51,8 +44,7 @@ export async function PUT(
     const accessCode = rawEntries.accessCode as string;
     const capacityRaw = rawEntries.capacity as string;
 
-    // 🌟 EXTRACCIÓN INMUNE A ERRORES PROTOCOLARES
-    // Validamos el texto directamente desde el objeto plano indexado que vimos en el log
+    // Validación inmune a errores del input de privacidad que arreglamos antes
     const isPublic = rawEntries.isPublic === "true" || rawEntries.isPublic === true;
 
     if (!name || !date) {
@@ -77,36 +69,32 @@ export async function PUT(
       },
     });
 
-    // Logs de confirmación absoluta para cerrar el caso
-    console.log(`👁️ REVISIÓooN FINAL BDD -> ID: ${id}`);
-    console.log(`IsPublic enviado al modelo: ${isPublic} | Guardado real: ${updatedEvent.isPublic}`);
-
-    
-
-    // 🌟 LOG DE AUDITORÍA: Guardamos el cambio en caliente
+    // 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA CON LOS DATOS DE LA RELACIÓN SEGURA
     await createAuditLog({
       action: "EVENT_UPDATE",
       entity: "EVENT",
       entityId: id,
-      userId: user.id,          // ID interno de tu tabla User
-      userEmail: user.email,    // Email del organizador logueado
+      userId: event.user.id,          // ID interno de tu tabla User obtenido del include
+      userEmail: event.user.email,    // Email guardado en tu base de datos
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `Editó el evento "${updatedEvent.name}". Cambios guardados -> Público: ${updatedEvent.isPublic}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
+      details: `Editó el evento "${updatedEvent.name}". Estado actual -> Público: ${updatedEvent.isPublic}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
     });
 
     revalidatePath("/eventos");
     revalidatePath(`/eventos/editar/${id}`);
-    revalidatePath("/api/events");
 
     return NextResponse.json({ success: true, event: updatedEvent });
 
   } catch (error: any) {
-    console.error("❌ Error crítico al actualizar evento:", error);
-    return NextResponse.json({ error: "Error interno al actualizar el evento" }, { status: 500 });
+    console.error("❌ Error crítico en método PUT de eventos:", error);
+    return NextResponse.json({ 
+      error: "Ocurrió un error interno al intentar guardar los cambios del evento." 
+    }, { status: 500 });
   }
 }
 
 // ==================== ELIMINAR EVENTO (BLINDADO) ====================
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -119,42 +107,51 @@ export async function DELETE(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    // 1. Buscar el evento PRIMERO para validar y guardar sus datos en memoria
     const event = await prisma.event.findUnique({
       where: { id },
-      select: { userId: true, name: true }
+      include: { user: true } // Traemos la relación del usuario
     });
 
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: clerkUser.id }
-    });
-
-    if (!user || user.id !== event.userId) {
+    // 2. Validar que el usuario que borra sea el dueño
+    if (event.user.clerkId !== clerkUser.id) {
       return NextResponse.json({ error: "No tienes permiso para eliminar este evento" }, { status: 403 });
     }
 
-    await prisma.event.delete({
-      where: { id }
-    });
-
-    // 🌟 LOG DE AUDITORÍA: El registro sobrevive aunque el evento se borre
+    // 3. 🌟 ESCRIBIR EL LOG DE AUDITORÍA ANTES DE BORRAR 🌟
+    // Si lo hacemos después, perdemos las referencias en la base de datos
     await createAuditLog({
       action: "EVENT_DELETE",
       entity: "EVENT",
       entityId: id,
-      userId: user.id,
-      userEmail: user.email,
+      userId: event.userId,          // ID interno del usuario dueño
+      userEmail: event.user.email,   // Email del dueño
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `Eliminó de forma permanente el evento: "${event.name}" (Número: ${event.eventNumber})`
+      details: `Eliminó de forma permanente el evento: "${event.name}" (Número de evento: ${event.eventNumber || 'N/A'})`
     });
+
+    // 4. Ahora sí, procedemos a borrar de forma segura en Neon
+    // Gracias al onDelete: Cascade en tu esquema, esto borrará también a sus asistentes en automático
+    await prisma.event.delete({
+      where: { id }
+    });
+
+    // 5. Revalidar las rutas afectadas
+    revalidatePath("/eventos");
 
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
-    console.error("❌ Error crítico al eliminar evento:", error);
-    return NextResponse.json({ error: "Error interno al eliminar el evento" }, { status: 500 });
+    // Dejamos el registro en los logs de Vercel para que tú lo veas en grande
+    console.error("❌ Error crítico en método DELETE de eventos:", error);
+    
+    // Obscurecemos el error hacia el frontend para que no de un truene visual feo
+    return NextResponse.json({ 
+      error: "No se pudo eliminar el evento de forma correcta debido a un conflicto interno." 
+    }, { status: 500 });
   }
 }

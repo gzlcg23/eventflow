@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 // ==================== ACTUALIZAR EVENTO (BLINDADO) ====================
 // app/api/events/[id]/route.ts
 
+// app/api/events/[id]/route.ts
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -37,43 +39,30 @@ export async function PUT(
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
 
+    // 2. Extraer datos de FormData de forma ultra-segura
     const formData = await request.formData();
-    
-    // Tu log de confianza
-    console.log("DEBUG FRONTEND -> ¿Qué está llegando al servidor?:", Object.fromEntries(formData.entries()));
+    const rawEntries = Object.fromEntries(formData.entries());
 
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const date = formData.get("date") as string;
-    const location = formData.get("location") as string;
-    const locationUrl = formData.get("locationUrl") as string;
-    const accessCode = formData.get("accessCode") as string;
-    const capacityRaw = formData.get("capacity") as string;
+    const name = rawEntries.name as string;
+    const description = rawEntries.description as string;
+    const date = rawEntries.date as string;
+    const location = rawEntries.location as string;
+    const locationUrl = rawEntries.locationUrl as string;
+    const accessCode = rawEntries.accessCode as string;
+    const capacityRaw = rawEntries.capacity as string;
 
-    // 🌟 CONTROL DE DAÑOS TOTAL: Extracción directa y ruda
-    const rawValue = formData.get("isPublic");
-    let isPublic = false;
-
-    if (rawValue !== null && rawValue !== undefined) {
-      // Si es un string que dice "true", o si milagrosamente viene como booleano true
-      if (rawValue === true || String(rawValue).trim() === "true") {
-        isPublic = true;
-      }
-    }
+    // 🌟 EXTRACCIÓN INMUNE A ERRORES PROTOCOLARES
+    // Validamos el texto directamente desde el objeto plano indexado que vimos en el log
+    const isPublic = rawEntries.isPublic === "true" || rawEntries.isPublic === true;
 
     if (!name || !date) {
       return NextResponse.json({ error: "Nombre y fecha son obligatorios" }, { status: 400 });
     }
 
     const capacity = capacityRaw && capacityRaw.trim() !== "" ? parseInt(capacityRaw, 10) : null;
+    const finalAccessCode = !isPublic && accessCode ? accessCode.trim().toUpperCase() : null;
 
-    // 1. Forzar que la variable sea un booleano primitivo puro
-    const isPublicBoolean = Boolean(isPublic);
-
-    // 2. Determinar el código de acceso antes de meterlo a la query
-    // Si es público, forzamos de forma implícita un null independiente
-    const finalAccessCode = !isPublicBoolean && accessCode ? accessCode.trim().toUpperCase() : null;
-
+    // 3. Actualizar en Base de Datos
     const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
@@ -82,22 +71,19 @@ export async function PUT(
         date: new Date(date),
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
-        
-        // 🌟 Forzamos el valor primitivo exacto
-        isPublic: isPublicBoolean, 
+        isPublic: isPublic, 
         accessCode: finalAccessCode,
-        
         capacity: capacity !== null && !isNaN(capacity) ? capacity : null,
       },
     });
 
-    // Logs de confirmación absoluta post-mutación
-    console.log(`👁️ REVISIÓN BDD POST-UPDATE -> ID: ${id}`);
-    console.log(`IsPublic enviado: ${isPublicBoolean} | Guardado en BDD: ${updatedEvent.isPublic}`);
-    console.log(`AccessCode guardado: ${updatedEvent.accessCode}`);
+    // Logs de confirmación absoluta para cerrar el caso
+    console.log(`👁️ REVISIÓooN FINAL BDD -> ID: ${id}`);
+    console.log(`IsPublic enviado al modelo: ${isPublic} | Guardado real: ${updatedEvent.isPublic}`);
 
     revalidatePath("/eventos");
     revalidatePath(`/eventos/editar/${id}`);
+    revalidatePath("/api/events");
 
     return NextResponse.json({ success: true, event: updatedEvent });
 

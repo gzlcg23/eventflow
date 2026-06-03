@@ -1,4 +1,3 @@
-// app/api/admin/toggle-event/route.ts
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -6,7 +5,9 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const clerkUser = await currentUser();
-    if (!clerkUser) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!clerkUser) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
     const { eventId, isActive, deactivationReason } = await request.json();
 
@@ -14,23 +15,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    // =========================================================================
-    // 🚨 PARCHE TEMPORAL DE RESCATE: Asegura que tu cuenta sea SUPER_ADMIN
-    // Una vez que des un clic al botón y funcione, puedes borrar estas líneas.
-    // =========================================================================
-    await prisma.user.updateMany({
-      where: { clerkId: clerkUser.id },
-      data: { role: "SUPER_ADMIN" }
-    });
-    // =========================================================================
-
-    // Verificar que sea Super Admin
+    // Verificar el usuario en la base de datos
     const admin = await prisma.user.findUnique({
       where: { clerkId: clerkUser.id }
     });
 
+    // LOG DE SEGURIDAD: Te dirá exactamente en los logs de Vercel qué está leyendo el servidor
+    console.log(`🔐 Intento de Toggle por ClerkID: ${clerkUser.id} | Rol DB: ${admin?.role || 'NULL'}`);
+
     if (admin?.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Solo Super Admin puede hacer esto" }, { status: 403 });
+      return NextResponse.json({ 
+        error: "Solo Super Admin puede hacer esto",
+        debugInfo: { checkedId: clerkUser.id, currentRole: admin?.role || "none" }
+      }, { status: 403 });
     }
 
     const updateData: any = { 
@@ -39,9 +36,11 @@ export async function POST(request: Request) {
       paymentStatus: isActive ? "PAID" : "PENDING",
     };
 
-    // Si se está desactivando, guardar la razón
     if (!isActive && deactivationReason) {
       updateData.deactivationReason = deactivationReason.trim();
+    } else if (isActive) {
+      // Al activar, limpiamos cualquier motivo de baja previo
+      updateData.deactivationReason = null;
     }
 
     const event = await prisma.event.update({
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       data: updateData
     });
 
-    console.log(`🔄 Evento ${eventId} → ${isActive ? 'ACTIVADO' : 'DESACTIVADO'} | Razón: ${deactivationReason || 'N/A'}`);
+    console.log(`🔄 Evento ${eventId} → ${isActive ? 'ACTIVADO' : 'DESACTIVADO'}`);
 
     return NextResponse.json({ success: true, event });
 

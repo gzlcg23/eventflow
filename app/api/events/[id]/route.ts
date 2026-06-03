@@ -39,7 +39,7 @@ export async function PUT(
 
     const formData = await request.formData();
     
-    // Tu log de debug que nos salvó la vida:
+    // Tu log de confianza
     console.log("DEBUG FRONTEND -> ¿Qué está llegando al servidor?:", Object.fromEntries(formData.entries()));
 
     const name = formData.get("name") as string;
@@ -50,9 +50,16 @@ export async function PUT(
     const accessCode = formData.get("accessCode") as string;
     const capacityRaw = formData.get("capacity") as string;
 
-    // 🌟 Conversión ultra-segura a booleano fozando strings
-    const isPublicRaw = formData.get("isPublic");
-    const isPublic = isPublicRaw !== null && String(isPublicRaw).trim().toLowerCase() === "true";
+    // 🌟 CONTROL DE DAÑOS TOTAL: Extracción directa y ruda
+    const rawValue = formData.get("isPublic");
+    let isPublic = false;
+
+    if (rawValue !== null && rawValue !== undefined) {
+      // Si es un string que dice "true", o si milagrosamente viene como booleano true
+      if (rawValue === true || String(rawValue).trim() === "true") {
+        isPublic = true;
+      }
+    }
 
     if (!name || !date) {
       return NextResponse.json({ error: "Nombre y fecha son obligatorios" }, { status: 400 });
@@ -68,20 +75,18 @@ export async function PUT(
         date: new Date(date),
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
-        isPublic,
-        // Si el evento ahora es público, limpiamos el código de acceso para que no estorbe
+        isPublic: isPublic, // 🌟 Forzado aquí
         accessCode: !isPublic && accessCode ? accessCode.trim().toUpperCase() : null,
         capacity: isNaN(capacity as number) ? null : capacity,
       },
     });
 
-    console.log(`📝 Evento editado por [${user.email}]: ${updatedEvent.name} | Público: ${updatedEvent.isPublic}`);
+    // Este log nos va a cantar la verdad absoluta ahora mismo
+    console.log(`🪵 LOG DURO -> Valor procesado final:`, isPublic, `| Tipo:`, typeof isPublic);
+    console.log(`📝 Evento editado en BDD: ${updatedEvent.name} | Público en BDD: ${updatedEvent.isPublic}`);
 
-    // 🌟 LA SOLUCIÓN AL BUG DE LA CACHÉ:
-    // Le decimos a Next.js que destruya la caché vieja de estas páginas y rutas
     revalidatePath("/eventos");
-    revalidatePath("/eventos/editar/[id]", "page");
-    revalidatePath("/api/events"); // Limpia la caché si tu frontend consume este GET
+    revalidatePath(`/eventos/editar/${id}`);
 
     return NextResponse.json({ success: true, event: updatedEvent });
 

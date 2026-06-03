@@ -1,5 +1,5 @@
 // app/eventos/layout.tsx
-import Footer from "../components/Footer"; // 🌟 Ajusta la ruta relativa si tu carpeta components está en otro lado
+import Footer from "../components/Footer"; // Conserva la ruta que te funcionó en VS Code
 
 export default function DashboardLayout({
   children,
@@ -7,16 +7,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Forzamos fondo oscuro premium para la sección privada del SaaS
-    <div className="flex-1 flex flex-col bg-zinc-950 text-zinc-100">
+    // 1. Mantenemos el flujo vertical sin alterar fondos (usa el fondo claro del RootLayout)
+    <div className="flex-1 flex flex-col w-full">
       
-      {/* Contenedor del panel interno */}
-      <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      {/* 2. Contenedor a ancho completo (w-full) para que tus gráficas y eventos no se aprieten */}
+      <div className="flex-1 w-full">
         {children}
       </div>
 
-      {/* 🌟 Footer profesional oscuro automático para todo el interior */}
-      <Footer variant="dark" />
+      {/* 3. El Footer en variante clara para hacer juego con tu diseño original */}
+      <Footer variant="light" />
     </div>
   );
 }

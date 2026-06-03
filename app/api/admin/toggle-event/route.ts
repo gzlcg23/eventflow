@@ -14,6 +14,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
+    // =========================================================================
+    // 🚨 PARCHE TEMPORAL DE RESCATE: Asegura que tu cuenta sea SUPER_ADMIN
+    // Una vez que des un clic al botón y funcione, puedes borrar estas líneas.
+    // =========================================================================
+    await prisma.user.updateMany({
+      where: { clerkId: clerkUser.id },
+      data: { role: "SUPER_ADMIN" }
+    });
+    // =========================================================================
+
     // Verificar que sea Super Admin
     const admin = await prisma.user.findUnique({
       where: { clerkId: clerkUser.id }

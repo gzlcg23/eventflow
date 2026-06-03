@@ -4,8 +4,8 @@
 import { useState, useMemo } from 'react';
 import { Check, X, Lock, Unlock, Search, Download, Trash2 } from 'lucide-react';
 import { format, differenceInDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 const COSTO_POR_EVENTO = 1500;
@@ -98,36 +98,73 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     XLSX.writeFile(wb, `Reporte_SuperAdmin_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
   };
 
- // ==================== EXPORTAR PDF (DISEÑO PROFESIONAL) ====================
+ // ==================== EXPORTAR PDF (DISEÑO EDITORIAL MINIMALISTA) ====================
   const exportFinancialPDF = () => {
-    const { jsPDF } = require('jspdf');
-    const autoTable = require('jspdf-autotable');
-
-    const doc = new jsPDF();
+    // 🌟 Usamos las instancias importadas estáticamente al inicio del archivo para Next.js
+    const doc = new jsPDF('p', 'mm', 'a4');
     const today = new Date();
 
-    // Título principal
+    // --- CONFIGURACIÓN DE COLORES DE MARCA ---
+    const primaryColor = [26, 32, 44];   // Charcoal (#1a202c)
+    const mutedColor = [113, 128, 150];  // Slate Grey (#718096)
+    const lightBg = [247, 250, 252];     // Soft Grey (#f7fafc)
+    const successColor = [4, 116, 129];  // Deep Teal para Relieve Financiero Neta
+
+    // --- ENCABEZADO EDITORIAL ---
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(24);
-    doc.setTextColor(16, 185, 129);
-    doc.text("REPORTE FINANCIERO", 20, 25);
-    doc.setFontSize(12);
-    doc.setTextColor(100, 116, 139);
-    doc.text("EventFlow - Resumen de Ingresos", 20, 33);
-
-    doc.setFontSize(11);
-    doc.text(`Generado el ${format(today, "dd 'de' MMMM yyyy 'a las' HH:mm")}`, 20, 45);
-
-    // Resumen General
-    doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
-    doc.text("Resumen General", 20, 65);
+    doc.text("EventFlow", 16, 24);
 
-    doc.setFontSize(11);
-    doc.text(`Total de Eventos: ${filteredEvents.length}`, 30, 78);
-    doc.text(`Eventos Activos: ${activeEvents.length}`, 30, 86);
-    doc.text(`Eventos Inactivos: ${filteredEvents.length - activeEvents.length}`, 30, 94);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text("Internal Administration & Corporate Operations", 16, 29);
 
-    // Cálculos Financieros
+    // Meta-datos a la derecha
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("REPORTE FINANCIERO EJECUTIVO", 194, 20, { align: "right" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text(`Corte: ${format(today, "dd/MM/yyyy HH:mm")}`, 194, 25, { align: "right" });
+
+    // Línea divisoria brutalista
+    doc.setDrawColor(26, 32, 44);
+    doc.setLineWidth(0.6);
+    doc.line(16, 34, 194, 34);
+
+    // --- BLOQUE 1: RESUMEN OPERATIVO ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("01. RESUMEN OPERATIVO GENERAL", 16, 45);
+
+    doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+    doc.rect(16, 50, 178, 18, "F");
+
+    const stats = [
+      { value: `${filteredEvents.length}`, label: "Eventos Totales" },
+      { value: `${activeEvents.length}`, label: "Eventos Activos" },
+      { value: `${filteredEvents.length - activeEvents.length}`, label: "Eventos Inactivos" }
+    ];
+
+    stats.forEach((stat, index) => {
+      const startX = 30 + (index * 58);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text(stat.value, startX, 58);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.text(stat.label, startX, 63);
+    });
+
+    // --- CÁLCULOS FINANCIEROS BIEN OPERADOS ---
     const grossProfit = activeEvents.length * COSTO_POR_EVENTO;
     const iva = grossProfit * 0.16;
     const domainCost = 450;
@@ -138,60 +175,108 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     const partner1Share = netProfit * 0.40;   // Socio 1 - 40%
     const partner2Share = netProfit * 0.60;   // Socio 2 - 60%
 
-    doc.setFontSize(16);
-    doc.text("Ganancias", 20, 115);
-
-    doc.setFontSize(11);
-    doc.text(`Ganancia Bruta:`, 30, 128);
-    doc.text(`$${grossProfit.toLocaleString('es-MX')}`, 120, 128);
-
-    doc.text(`- IVA (16%):`, 30, 136);
-    doc.text(`$${iva.toLocaleString('es-MX')}`, 120, 136);
-
-    doc.text(`- Costo Dominio:`, 30, 144);
-    doc.text(`$${domainCost.toLocaleString('es-MX')}`, 120, 144);
-
-    doc.text(`- Costo Servidor:`, 30, 152);
-    doc.text(`$${serverCost.toLocaleString('es-MX')}`, 120, 152);
-
-    doc.setDrawColor(200);
-    doc.line(30, 158, 180, 158);   // Línea elegante
-
+    // --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text(`Ganancia Neta:`, 30, 170);
-    doc.text(`$${netProfit.toLocaleString('es-MX')}`, 120, 170);
+    doc.setTextColor(0, 0, 0);
+    doc.text("02. ESTADO DE RESULTADOS & PARTICIPACIÓN", 16, 82);
 
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Socio 1 (40%):`, 30, 182);
-    doc.text(`$${partner1Share.toLocaleString('es-MX')}`, 120, 182);
+    const financialRows = [
+      ['Ganancia Bruta corporativa', `$${grossProfit.toLocaleString('es-MX')}`],
+      ['- Impuesto sobre el Valor Añadido (IVA 16%)', `$${iva.toLocaleString('es-MX')}`],
+      ['- Costos fijos operativos (Dominio)', `$${domainCost.toLocaleString('es-MX')}`],
+      ['- Costos fijos operativos (Infraestructura / Servidor)', `$${serverCost.toLocaleString('es-MX')}`],
+      ['GANANCIA NETA DISTRIBUIBLE', `$${netProfit.toLocaleString('es-MX')}`],
+      ['Asignación Socio 1 (Distribución 40%)', `$${partner1Share.toLocaleString('es-MX')}`],
+      ['Asignación Socio 2 (Distribución 60%)', `$${partner2Share.toLocaleString('es-MX')}`]
+    ];
 
-    doc.text(`Socio 2 (60%):`, 30, 190);
-    doc.text(`$${partner2Share.toLocaleString('es-MX')}`, 120, 190);
+    autoTable(doc, {
+      body: financialRows,
+      startY: 87,
+      margin: { left: 16, right: 16 },
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 3.5,
+        textColor: [45, 55, 72]
+      },
+      columnStyles: {
+        0: { cellWidth: 130 },
+        1: { cellWidth: 48, halign: 'right', fontStyle: 'bold' }
+      },
+      didParseCell: function (data) {
+        // Estilo brutalista disruptivo para la fila de Ganancia Neta (Fila índice 4)
+        if (data.row.index === 4) {
+          data.cell.styles.fillColor = [26, 32, 44]; // Fondo oscuro completo
+          data.cell.styles.textColor = [255, 255, 255]; // Texto blanco
+          data.cell.styles.fontStyle = 'bold';
+        }
+        // Subrayado sutil para los socios para denotar reparto final
+        if (data.row.index > 4) {
+          data.cell.styles.fillColor = [252, 253, 253];
+          if (data.column.index === 1) {
+            data.cell.styles.textColor = successColor;
+          }
+        }
+      }
+    });
 
-    // Tabla detallada
-    doc.setFontSize(16);
-    doc.text("Detalle por Evento", 20, 215);
+    // --- BLOQUE 3: DETALLE COMPLETO DE EVENTOS ---
+    const nextY = (doc as any).lastAutoTable.finalY + 14;
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("03. DESGLOSE INDIVIDUAL DE TRANSACCIONES", 16, nextY);
 
     const tableData = filteredEvents.map(event => [
       event.eventNumber || '—',
       event.name,
       `${event.user.firstName || ''} ${event.user.lastName || ''}`.trim() || 'Sin nombre',
       format(new Date(event.date), "dd/MM/yyyy"),
-      event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '—',
-      event.isActive ? `$${COSTO_POR_EVENTO}` : '—',
+      event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy") : '—',
+      event.isActive ? `$${COSTO_POR_EVENTO.toLocaleString('es-MX')}` : '—',
       event.deactivationReason || '—'
     ]);
 
-    autoTable.default(doc, {
-      head: [['Número', 'Evento', 'Organizador', 'Fecha', 'Activado', 'Monto', 'Razón']],
+    autoTable(doc, {
+      head: [['Número', 'Evento', 'Organizador', 'Fecha', 'Activación', 'Monto', 'Motivo de Baja']],
       body: tableData,
-      startY: 225,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [16, 185, 129] },
-      alternateRowStyles: { fillColor: [245, 247, 250] }
+      startY: nextY + 5,
+      margin: { left: 16, right: 16 },
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 8.5,
+        cellPadding: 3.5,
+        textColor: [45, 55, 72]
+      },
+      headStyles: {
+        fillColor: [26, 32, 44], // Encabezado Charcoal
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [252, 253, 253]
+      },
+      columnStyles: {
+        5: { fontStyle: 'bold', halign: 'right' }
+      }
     });
+
+    // Paginación y validación institucional al pie de página
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(160, 174, 192);
+      doc.text("CONFIDENCIAL • EventFlow Superadmin Audit System", 16, 285);
+      doc.text(`Pág. ${i} de ${totalPages}`, 194, 285, { align: "right" });
+    }
 
     doc.save(`Reporte_Financiero_${format(today, "yyyy-MM-dd")}.pdf`);
   };

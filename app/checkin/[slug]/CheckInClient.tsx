@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Check, Search, Users, Clock, Download, FileText, QrCode, UserCheck, X, Share2 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format, differenceInDays } from 'date-fns';
 
@@ -45,7 +45,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   const eventDate = new Date(event.date);
   const isEventFinished = differenceInDays(new Date(), eventDate) > 1;
 
-  // ==================== EXPORTAR EXCEL ====================
+// ==================== EXPORTAR EXCEL ====================
   const exportExcel = () => {
     if (attendees.length === 0) {
       alert("No hay asistentes para exportar");
@@ -70,38 +70,140 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     XLSX.writeFile(wb, `${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
   };
 
-  // ==================== EXPORTAR PDF ====================
+  // ==================== EXPORTAR PDF (DISEÑO MINIMALISTA PREMIUM) ====================
   const exportPDF = () => {
-    const { jsPDF } = require('jspdf');
-    const autoTable = require('jspdf-autotable');
-
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text(`Evento: ${event.name}`, 14, 20);
+    // 🌟 Usamos las instancias ya importadas estáticamente al inicio del archivo para Next.js
+    const doc = new jsPDF('p', 'mm', 'a4');
     
-    doc.setFontSize(11);
-    doc.text(`Fecha: ${new Date(event.date).toLocaleDateString('es-MX')}`, 14, 30);
-    doc.text(`Total registrados: ${totalAttendees}`, 14, 38);
-    doc.text(`Check-in realizados: ${checkedInCount} (${Math.round((checkedInCount / totalAttendees) * 100) || 0}%)`, 14, 46);
-    doc.text(`Sin Check-in: ${notCheckedInCount}`, 14, 54);
+    // --- CONFIGURACIÓN DE COLORES DE MARCA ---
+    const primaryColor = [26, 32, 44];   // Charcoal (#1a202c)
+    const mutedColor = [113, 128, 150];  // Slate Grey (#718096)
+    const lightBg = [247, 250, 252];     // Soft Grey (#f7fafc)
+    const successColor = [4, 116, 129];  // Deep Teal para check-ins
 
-    const tableColumn = ['Nombre', 'Email', 'Empresa', 'Código QR', 'Estado', 'Check-in'];
-    const tableRows = attendees.map(a => [
+    // --- ENCABEZADO EDITORIAL ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(0, 0, 0);
+    doc.text("EventFlow", 16, 24);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text("Reporte Técnico de Accesos y Check-in", 16, 29);
+
+    // Meta-datos del reporte a la derecha
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("Control de Asistencia Individual", 194, 20, { align: "right" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text(`Generado: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 194, 25, { align: "right" });
+
+    // Línea divisoria brutalista
+    doc.setDrawColor(26, 32, 44);
+    doc.setLineWidth(0.6);
+    doc.line(16, 34, 194, 34);
+
+    // --- BLOQUE INFORMATIVO DEL EVENTO ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(event.name.toUpperCase(), 16, 44);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    const eventDateStr = event.date ? format(new Date(event.date), "dd/MM/yyyy") : '-';
+    doc.text(`Fecha del Evento: ${eventDateStr}`, 16, 49);
+
+    // --- CONTENEDOR DE MÉTRICAS RÁPIDAS ---
+    doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+    doc.rect(16, 56, 178, 20, "F");
+
+    const attendanceRate = Math.round((checkedInCount / totalAttendees) * 100) || 0;
+    const stats = [
+      { value: `${totalAttendees}`, label: "Registrados" },
+      { value: `${checkedInCount}`, label: "Check-ins" },
+      { value: `${notCheckedInCount}`, label: "Faltantes" },
+      { value: `${attendanceRate}%`, label: "Efectividad" }
+    ];
+
+    stats.forEach((stat, index) => {
+      const startX = 26 + (index * 44);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text(stat.value, startX, 65);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.text(stat.label, startX, 70);
+    });
+
+    // --- TABLA DE ASISTENTES ---
+    const tableColumn = ['Nombre Asistente', 'Email', 'Empresa / Organización', 'Código QR', 'Estatus', 'Hora de Entrada'];
+    const tableRows = attendees.map((a: any) => [
       a.name,
       a.email,
       a.company || '-',
       a.qrCode,
-      a.status === 'CHECKED_IN' ? '✓ CHECK-IN' : 'Pendiente',
-      a.checkedInAt ? new Date(a.checkedInAt).toLocaleString('es-MX') : '-'
+      a.status === 'CHECKED_IN' ? '✓ CHECK-IN' : 'PENDIENTE',
+      a.checkedInAt ? format(new Date(a.checkedInAt), "dd/MM/yyyy HH:mm") : '-'
     ]);
 
-    autoTable.default(doc, {
+    // Llamado directo a la función de autoTable usando la API correcta
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 65,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [16, 185, 129] }
+      startY: 84,
+      margin: { left: 16, right: 16 },
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 8.5,
+        cellPadding: 3.5,
+        textColor: [45, 55, 72]
+      },
+      headStyles: {
+        fillColor: [26, 32, 44], // Encabezado Charcoal idéntico al general
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [252, 253, 253] // Fila cebra ultra sutil
+      },
+      didParseCell: function (data) {
+        // Estilización de la columna de Estatus
+        if (data.section === 'body' && data.column.index === 4) {
+          if (data.cell.raw === '✓ CHECK-IN') {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.textColor = successColor;
+          } else {
+            data.cell.styles.textColor = mutedColor;
+          }
+        }
+        // Resaltar tipográficamente el código QR
+        if (data.section === 'body' && data.column.index === 3) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
     });
+
+    // Agregar pie de página dinámico con paginación
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(160, 174, 192);
+      doc.text("EventFlow Platform • Reporte Verificado", 16, 285);
+      doc.text(`Pág. ${i} de ${totalPages}`, 194, 285, { align: "right" });
+    }
 
     doc.save(`${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.pdf`);
   };

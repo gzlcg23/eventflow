@@ -1,7 +1,7 @@
 // app/api/registro/route.ts
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server"; // 🌟 Importamos NextRequest para rastrear la IP
-import { registroRateLimiter } from "@/lib/ratelimit";   // 🌟 Importamos tu escudo de Upstash
+import { NextRequest, NextResponse } from "next/server";
+import { registroRateLimiter } from "@/lib/ratelimit";   
 // @ts-ignore
 import QRCode from 'qrcode';
 import { Resend } from 'resend';
@@ -9,7 +9,6 @@ import { z } from 'zod';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// ==================== ESQUEMA DE VALIDACIÓN ULTRA-BLINDADO ====================
 const registroSchema = z.object({
   eventId: z.string().min(1, "El ID del evento es requerido"),
   
@@ -44,24 +43,16 @@ const registroSchema = z.object({
   ).optional().nullable()
 });
 
-// 🌟 Cambiamos 'Request' por 'NextRequest' para el soporte de headers de Upstash
 export async function POST(request: NextRequest) {
   try {
-    // 🛡️ ==================== ESCUDO DE RATE LIMITING ====================
-    // Extraemos la IP real del cliente suministrada por la infraestructura de Vercel
     const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-    
-    // Evaluamos los límites en Upstash Redis
     const { success, limit, reset, remaining } = await registroRateLimiter.limit(ip);
     
-    // Si superó los 5 intentos por minuto, cortamos la petición aquí mismo
     if (!success) {
       return NextResponse.json(
+        { error: "Demasiados intentos de registro. Por seguridad, tu dirección IP ha sido bloqueada temporalmente. Por favor, intenta de nuevo en un minuto." }, 
         { 
-          error: "Demasiados intentos de registro. Por seguridad, tu dirección IP ha sido bloqueada temporalmente. Por favor, intenta de nuevo en un minuto." 
-        }, 
-        { 
-          status: 429, // HTTP 429: Too Many Requests
+          status: 429, 
           headers: {
             "X-RateLimit-Limit": limit.toString(),
             "X-RateLimit-Remaining": remaining.toString(),
@@ -70,35 +61,44 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    // ====================================================================
 
     const body = await request.json();
-
-    // Validar con Zod de forma estricta
     const result = registroSchema.safeParse(body);
 
-    // Si la validación falla, retornamos el error de forma segura
     if (!result.success) {
-      const errorMessages = result.error.issues
-        .map((issue) => issue.message)
-        .join(", ");
-
+      const errorMessages = result.error.issues.map((issue) => issue.message).join(", ");
       return NextResponse.json({ error: errorMessages }, { status: 400 });
     }
 
-    // Datos limpios y totalmente validados por Zod
     const { name, email, company, phone, eventId } = result.data;
 
-    // Verificar que el evento exista en la base de datos
+    // 1. Obtener evento incluyendo la capacidad
     const event = await prisma.event.findUnique({
-      where: { id: eventId }
+      where: { id: eventId },
+      select: { id: true, name: true, date: true, capacity: true }
     });
 
     if (!event) {
       return NextResponse.json({ error: "El evento especificado no existe." }, { status: 404 });
     }
 
-    // Crear el asistente en Prisma
+    // 2. 🌟 VALIDACIÓN DE CAPACIDAD (LÍMITE DE ASISTENTES)
+    if (event.capacity !== null) {
+      const currentAttendeesCount = await prisma.attendee.count({
+        where: { 
+          eventId: eventId,
+          status: { in: ["REGISTERED", "CHECKED_IN"] } // No contamos los cancelados
+        }
+      });
+
+      if (currentAttendeesCount >= event.capacity) {
+        return NextResponse.json({ 
+          error: "Lo sentimos, el registro para este evento se ha cerrado porque se alcanzó el cupo máximo de asistentes." 
+        }, { status: 422 }); // HTTP 422: Unprocessable Entity (Lógica de negocio rota)
+      }
+    }
+
+    // 3. Crear el asistente
     const attendee = await prisma.attendee.create({
       data: {
         name,
@@ -114,7 +114,6 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://registros.redspace.mx';
     const qrUrl = `${baseUrl}/checkin/${attendee.qrCode}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { width: 300 });
-
     const base64Data = qrCodeDataUrl.split(',')[1];
     const qrBuffer = Buffer.from(base64Data, 'base64');
 
@@ -124,37 +123,7 @@ export async function POST(request: NextRequest) {
         from: 'EventFlow <no-reply@redspace.mx>',
         to: email,
         subject: `Registro Confirmado - ${event.name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
-            <div style="background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #10b981; margin: 0; font-size: 28px;">¡Registro Confirmado!</h1>
-                <p style="color: #6b7280; margin-top: 8px;">Ya formas parte de este evento</p>
-              </div>
-              <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 30px;">
-                <h2 style="color: #166534; margin: 0 0 8px 0;">${event.name}</h2>
-                <p style="color: #15803d; font-weight: bold; margin: 0;">
-                  ${new Date(event.date).toLocaleDateString('es-MX', { 
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
-                    hour: '2-digit', minute: '2-digit' 
-                  })}
-                </p>
-              </div>
-              <div style="text-align: center; margin: 30px 0;">
-                <p style="color: #374151; font-size: 17px; margin-bottom: 15px;">Tu código QR para el acceso:</p>
-                <img src="cid:qrcode" style="max-width: 280px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" alt="Tu QR Code"/>
-              </div>
-              <div style="background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
-                <p style="margin: 0; color: #64748b; font-size: 15px;">
-                  <strong>Código único de acceso:</strong> <span style="font-family: monospace; background: white; padding: 4px 10px; border-radius: 6px;">${attendee.qrCode}</span>
-                </p>
-              </div>
-              <p style="text-align: center; color: #64748b; margin-top: 30px; font-size: 14px;">
-                Guarda este correo. Deberás presentar el código QR en la entrada el día del evento.
-              </p>
-            </div>
-          </div>
-        `,
+        html: `... tu html completo sin cambios ...`, // Mantén tu HTML intacto aquí
         attachments: [
           {
             filename: 'codigo-qr.png',
@@ -167,6 +136,9 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error("⚠️ Error Resend:", emailError);
     }
+
+    // 🪵 Log de auditoría básico en consola
+    console.log(`✅ Nuevo asistente registrado: [${email}] en el evento [${event.name}]`);
 
     return NextResponse.json({
       success: true,
@@ -182,9 +154,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Este correo electrónico ya se encuentra registrado para este evento." }, { status: 409 });
     }
     
+    // 🌟 Ocultamos los detalles técnicos crudos del error para producción
     return NextResponse.json({ 
-      error: "Ocurrió un error interno al procesar tu registro.",
-      details: error.message || error
+      error: "Ocurrió un error interno al procesar tu registro por parte del servidor."
     }, { status: 500 });
   }
 }

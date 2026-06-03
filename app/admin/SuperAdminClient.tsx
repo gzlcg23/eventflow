@@ -409,20 +409,12 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     }
   };
 
-  // 🌟 AQUÍ INTERCEPTAS EL RENDER ANTES DEL RETURN PRINCIPAL
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p className="text-xs uppercase tracking-widest text-slate-400 animate-pulse font-mono">
-          Cargando panel de administración central...
-        </p>
-      </div>
-    );
-  }
+
 
   // Tu return actual se queda exactamente igual:
+  // Tu return principal ahora debe verse exactamente así:
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" suppressHydrationWarning>
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">

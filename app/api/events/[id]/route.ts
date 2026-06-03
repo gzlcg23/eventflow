@@ -39,11 +39,10 @@ export async function PUT(
 
     const formData = await request.formData();
     
-    // 🌟 METE ESTA LÍNEA DE LOG TEMPORAL:
+    // Tu log de debug que nos salvó la vida:
     console.log("DEBUG FRONTEND -> ¿Qué está llegando al servidor?:", Object.fromEntries(formData.entries()));
 
     const name = formData.get("name") as string;
-    // ... el resto de tu código
     const description = formData.get("description") as string;
     const date = formData.get("date") as string;
     const location = formData.get("location") as string;
@@ -51,16 +50,14 @@ export async function PUT(
     const accessCode = formData.get("accessCode") as string;
     const capacityRaw = formData.get("capacity") as string;
 
-    // 🌟 NORMALIZACIÓN DEL BOOLEANO ISPUBLIC
-    // Esto evalúa de forma segura si viene como string "true", booleano true, o el número 1.
+    // 🌟 Conversión ultra-segura a booleano fozando strings
     const isPublicRaw = formData.get("isPublic");
-    const isPublic = isPublicRaw === "true" || isPublicRaw === "1" || isPublicRaw === true;
+    const isPublic = isPublicRaw !== null && String(isPublicRaw).trim().toLowerCase() === "true";
 
     if (!name || !date) {
       return NextResponse.json({ error: "Nombre y fecha son obligatorios" }, { status: 400 });
     }
 
-    // Procesar la capacidad por si también la editan desde aquí
     const capacity = capacityRaw && capacityRaw.trim() !== "" ? parseInt(capacityRaw, 10) : null;
 
     const updatedEvent = await prisma.event.update({
@@ -72,6 +69,7 @@ export async function PUT(
         location: location?.trim() || null,
         locationUrl: locationUrl?.trim() || null,
         isPublic,
+        // Si el evento ahora es público, limpiamos el código de acceso para que no estorbe
         accessCode: !isPublic && accessCode ? accessCode.trim().toUpperCase() : null,
         capacity: isNaN(capacity as number) ? null : capacity,
       },

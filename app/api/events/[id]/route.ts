@@ -81,6 +81,19 @@ export async function PUT(
     console.log(`👁️ REVISIÓooN FINAL BDD -> ID: ${id}`);
     console.log(`IsPublic enviado al modelo: ${isPublic} | Guardado real: ${updatedEvent.isPublic}`);
 
+    
+
+    // 🌟 LOG DE AUDITORÍA: Guardamos el cambio en caliente
+    await createAuditLog({
+      action: "EVENT_UPDATE",
+      entity: "EVENT",
+      entityId: id,
+      userId: user.id,          // ID interno de tu tabla User
+      userEmail: user.email,    // Email del organizador logueado
+      ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
+      details: `Editó el evento "${updatedEvent.name}". Cambios guardados -> Público: ${updatedEvent.isPublic}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
+    });
+
     revalidatePath("/eventos");
     revalidatePath(`/eventos/editar/${id}`);
     revalidatePath("/api/events");
@@ -127,8 +140,16 @@ export async function DELETE(
       where: { id }
     });
 
-    // 🪵 Log de auditoría básico en consola del servidor
-    console.log(`🗑️ Evento ELIMINADO por el usuario [${user.email}]: ${event.name}`);
+    // 🌟 LOG DE AUDITORÍA: El registro sobrevive aunque el evento se borre
+    await createAuditLog({
+      action: "EVENT_DELETE",
+      entity: "EVENT",
+      entityId: id,
+      userId: user.id,
+      userEmail: user.email,
+      ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
+      details: `Eliminó de forma permanente el evento: "${event.name}" (Número: ${event.eventNumber})`
+    });
 
     return NextResponse.json({ success: true });
 

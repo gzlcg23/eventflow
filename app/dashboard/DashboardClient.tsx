@@ -63,80 +63,171 @@ export default function DashboardClient({
   ];
 
   // Exportar CSV General
-  const exportAllCSV = () => {
-    const allData: any[] = [];
-    filteredEvents.forEach(event => {
-      event.attendees.forEach((a: any) => {
-        allData.push({
-          Evento: event.name,
-          Nombre: a.name,
-          Email: a.email,
-          Empresa: a.company || '',
-          Teléfono: a.phone || '',
-          Código: a.qrCode,
-          Estado: a.status === 'CHECKED_IN' ? 'CHECK-IN' : 'Registrado',
-          'Fecha Check-in': a.checkedInAt ? new Date(a.checkedInAt).toLocaleString('es-MX') : '',
-          'Fecha Registro': new Date(a.createdAt).toLocaleString('es-MX')
-        });
-      });
-    });
-
-   
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Reporte_General_${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-  };
-
-    // Exportar PDF General - Versión corregida
+  // Exportar PDF General - Versión Minimalista Avanzada (Estilo Red Space / EventFlow)
   const exportAllPDF = () => {
     const { jsPDF } = require('jspdf');
-    const autoTable = require('jspdf-autotable');
+    require('jspdf-autotable');
 
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text("Reporte General de Eventos", 14, 20);
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    // --- ESTILOS TIPOGRÁFICOS GLOBALES ---
+    const primaryColor = [26, 32, 44];   // Charcoal (#1a202c)
+    const mutedColor = [113, 128, 150];  // Slate Grey (#718096)
+    const lightBg = [247, 250, 252];     // Soft Grey (#f7fafc)
 
-    doc.setFontSize(12);
-    doc.text(`Período: ${startDate || 'Todos los eventos'} - ${endDate || 'Hoy'}`, 14, 30);
-    doc.text(`Total Eventos: ${filteredEvents.length}`, 14, 38);
-    doc.text(`Total Asistentes: ${totalAttendees}`, 14, 46);
-    doc.text(`Check-ins: ${totalCheckedIn} (${attendanceRate}%)`, 14, 54);
+    // --- ENCABEZADO EDITORIAL ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(26);
+    doc.setTextColor(0, 0, 0);
+    doc.text("EventFlow", 16, 24);
 
-    let y = 70;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text("Analytics & Acceso Digital", 16, 30);
 
-    filteredEvents.forEach((event) => {
-      if (y > 250) {
+    // Meta-datos alineación derecha de forma manual
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("Reporte Ejecutivo de Impacto", 194, 20, { align: "right" });
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+    doc.text(`Fecha de emisión: ${format(new Date(), "dd/MM/yyyy")}`, 194, 25, { align: "right" });
+    doc.text(`Período: ${startDate || 'Todos'} - ${endDate || 'Hoy'}`, 194, 30, { align: "right" });
+
+    // Línea de corte minimalista gruesa (Estilo Brutalista)
+    doc.setDrawColor(26, 32, 44);
+    doc.setLineWidth(0.6);
+    doc.line(16, 36, 194, 36);
+
+    // --- BLOQUES DE RENDIMIENTO (DASHBOARD METRICS) ---
+    // Dibujamos un rectángulo gris de fondo para el sumario
+    doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+    doc.rect(16, 42, 178, 22, "F");
+
+    // Métricas
+    const cols = [
+      { num: `${filteredEvents.length}`, label: "Eventos" },
+      { num: `${totalAttendees}`, label: "Registrados" },
+      { num: `${totalCheckedIn}`, label: "Check-ins" },
+      { num: `${attendanceRate}%`, label: "Asistencia" }
+    ];
+
+    cols.forEach((col, index) => {
+      const startX = 24 + (index * 44);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text(col.num, startX, 52);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.text(col.label, startX, 58);
+    });
+
+    // Subtítulo de sección
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text("DESGLOSE ANALÍTICO POR EVENTO", 16, 76);
+
+    let currentY = 82;
+
+    // --- ITERACIÓN DE EVENTOS EN TABLAS MINIMALISTAS ---
+    filteredEvents.forEach((event, index) => {
+      // Verificar si nos estamos quedando sin espacio abajo en la página actual
+      if (currentY > 240) {
         doc.addPage();
-        y = 20;
+        currentY = 24;
       }
 
-      doc.setFontSize(14);
-      doc.text(event.name, 14, y);
-      y += 10;
+      // Banner o barra superior del evento
+      doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+      doc.rect(16, currentY, 178, 8, "F");
+      
+      // Detalle lateral de la barra (borde brutalista izquierdo)
+      doc.setFillColor(0, 0, 0);
+      doc.rect(16, currentY, 1.5, 8, "F");
 
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${String(index + 1).padStart(2, '0')}. ${event.name}`, 20, currentY + 5.5);
+
+      const eventDateStr = event.date ? format(new Date(event.date), "dd/MM/yyyy") : '';
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(mutedColor[0], mutedColor[1], mutedColor[2]);
+      doc.text(`Fecha: ${eventDateStr}`, 190, currentY + 5.5, { align: "right" });
+
+      currentY += 12;
+
+      // Estructuramos la data del evento actual
       const tableData = event.attendees.map((a: any) => [
         a.name,
         a.email,
         a.company || '-',
-        a.qrCode,
-        a.status === 'CHECKED_IN' ? '✓ CHECK-IN' : 'Pendiente',
-        a.checkedInAt ? new Date(a.checkedInAt).toLocaleDateString('es-MX') : '-'
+        a.qrCode || '-',
+        a.status === 'CHECKED_IN' ? '✓ CHECK-IN' : 'REGISTRADO'
       ]);
 
-      autoTable.default(doc, {
-        head: [['Nombre', 'Email', 'Empresa', 'Código', 'Estado', 'Check-in']],
+      // Render de la tabla usando la API de autoTable de forma limpia
+      doc.autoTable({
         body: tableData,
-        startY: y,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [16, 185, 129] }
+        columns: [
+          { header: 'Nombre', dataKey: 'name' },
+          { header: 'Email', dataKey: 'email' },
+          { header: 'Empresa', dataKey: 'company' },
+          { header: 'Código QR', dataKey: 'qr' },
+          { header: 'Estatus', dataKey: 'status' }
+        ],
+        startY: currentY,
+        margin: { left: 16, right: 16 },
+        theme: 'plain', // Eliminamos cajas pesadas corporativas
+        styles: {
+          font: 'helvetica',
+          fontSize: 8.5,
+          cellPadding: 3.5,
+          textColor: [45, 55, 72]
+        },
+        headStyles: {
+          fillColor: [26, 32, 44], // Encabezado oscuro plano
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [252, 253, 253] // Zebra striping ultra tenue
+        },
+        didParseCell: function (data) {
+          // Cambiar dinámicamente el estilo del texto si es CHECK-IN para dar relieve visual limpio
+          if (data.section === 'body' && data.column.index === 4) {
+            if (data.cell.raw === '✓ CHECK-IN') {
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.textColor = [4, 116, 129]; // Color verde azulado de éxito sutil
+            } else {
+              data.cell.styles.textColor = [113, 128, 150];
+            }
+          }
+        },
+        afterPageContent: function (data) {
+          // Numeración de páginas integrada
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(160, 174, 192);
+          doc.text(`Pág. ${doc.internal.getNumberOfPages()}`, 194, 285, { align: "right" });
+        }
       });
 
-      y = (doc as any).lastAutoTable.finalY + 15;
+      // El siguiente elemento arranca después de donde terminó la tabla
+      currentY = doc.lastAutoTable.finalY + 14;
     });
 
-    doc.save(`Reporte_General_${new Date().toISOString().slice(0,10)}.pdf`);
+    // Guardar archivo final
+    doc.save(`Reporte_Impacto_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
 
     // ==================== EXPORTAR A EXCEL (.xlsx) ====================

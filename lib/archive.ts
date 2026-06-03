@@ -1,4 +1,3 @@
-// lib/archive.ts
 import JSZip from 'jszip';
 import { prisma } from './prisma';
 
@@ -16,16 +15,19 @@ export async function generateEventArchive(eventId: string) {
   const zip = new JSZip();
   const folder = zip.folder(event.name) || zip;
 
+  // 🌟 Protección total: Aseguramos que attendees siempre sea un arreglo
+  const attendeesList = event.attendees ?? [];
+
   // Información general
   const info = {
     nombre: event.name,
     numeroReferencia: event.eventNumber,
     fechaEvento: event.date,
-    ubicacion: event.location,
+    ubicacion: event.location || "No especificada", // Salvavidas si viene nulo
     tipo: event.isPublic ? "Público" : "Privado",
     codigoAcceso: event.accessCode || "N/A",
-    totalRegistrados: event.attendees.length,
-    checkIns: event.attendees.filter(a => a.status === 'CHECKED_IN').length,
+    totalRegistrados: attendeesList.length,
+    checkIns: attendeesList.filter(a => a.status === 'CHECKED_IN').length,
     fechaCreacion: event.createdAt,
     fechaArchivo: new Date().toISOString()
   };
@@ -33,20 +35,24 @@ export async function generateEventArchive(eventId: string) {
   folder.file("informacion.json", JSON.stringify(info, null, 2));
 
   // Lista de asistentes en CSV
-  const csvRows = event.attendees.map(a => ({
-    Nombre: a.name,
-    Email: a.email,
+  const csvRows = attendeesList.map(a => ({
+    Nombre: a.name || '',
+    Email: a.email || '',
     Empresa: a.company || '',
-    Teléfono: a.phone || '',
-    QR: a.qrCode,
-    Estado: a.status,
-    FechaCheckIn: a.checkedInAt ? a.checkedInAt.toISOString() : '',
-    FechaRegistro: a.createdAt.toISOString()
+    "Teléfono": a.phone || '',
+    QR: a.qrCode || '',
+    Estado: a.status || '',
+    "FechaCheckIn": a.checkedInAt ? new Date(a.checkedInAt).toISOString() : '',
+    FechaRegistro: a.createdAt ? new Date(a.createdAt).toISOString() : ''
   }));
 
-  const csvContent = "data:text/csv;charset=utf-8," +
-    Object.keys(csvRows[0]).join(",") + "\n" +
-    csvRows.map(row => Object.values(row).join(",")).join("\n");
+  // 🌟 REGLA DE ORO: Cabeceras fijas para evitar leer la posición [0] si el arreglo está vacío
+  const headers = ["Nombre", "Email", "Empresa", "Teléfono", "QR", "Estado", "FechaCheckIn", "FechaRegistro"];
+  
+  // Construcción del contenido del CSV de forma 100% segura
+  const csvHeadersLine = headers.join(",");
+  const csvBodyLines = csvRows.map(row => Object.values(row).join(",")).join("\n");
+  const csvContent = csvBodyLines ? `${csvHeadersLine}\n${csvBodyLines}` : csvHeadersLine;
 
   folder.file("asistentes.csv", csvContent);
 

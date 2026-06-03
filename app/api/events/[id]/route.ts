@@ -2,8 +2,8 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { revalidatePath } from "cache";
-import { createAuditLog } from "@/lib/audit"; // 🌟 Asegúrate de que esta línea esté arriba
+import { revalidatePath } from "next/cache"; // 🌟 CORREGIDO AQUÍ
+import { createAuditLog } from "@/lib/audit"; 
 
 export async function PUT(
   request: Request,
@@ -123,7 +123,6 @@ export async function DELETE(
     }
 
     // 3. 🌟 ESCRIBIR EL LOG DE AUDITORÍA ANTES DE BORRAR 🌟
-    // Si lo hacemos después, perdemos las referencias en la base de datos
     await createAuditLog({
       action: "EVENT_DELETE",
       entity: "EVENT",
@@ -135,7 +134,6 @@ export async function DELETE(
     });
 
     // 4. Ahora sí, procedemos a borrar de forma segura en Neon
-    // Gracias al onDelete: Cascade en tu esquema, esto borrará también a sus asistentes en automático
     await prisma.event.delete({
       where: { id }
     });
@@ -146,10 +144,8 @@ export async function DELETE(
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
-    // Dejamos el registro en los logs de Vercel para que tú lo veas en grande
     console.error("❌ Error crítico en método DELETE de eventos:", error);
     
-    // Obscurecemos el error hacia el frontend para que no de un truene visual feo
     return NextResponse.json({ 
       error: "No se pudo eliminar el evento de forma correcta debido a un conflicto interno." 
     }, { status: 500 });

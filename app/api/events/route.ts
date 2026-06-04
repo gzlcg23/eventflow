@@ -12,7 +12,8 @@ export async function GET() {
 
   const events = await prisma.event.findMany({
     where: { 
-      user: { clerkId: clerkUser.id }   // Relación correcta
+      user: { clerkId: clerkUser.id },  // Relación correcta con tu usuario de Clerk
+      archived: false                   // 🌟 CANDADO CLAVE: Excluye los eventos archivados por el Cron Job
     },
     orderBy: { createdAt: 'desc' },
   });

@@ -2,9 +2,10 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { ArrowRight, Users, QrCode, BarChart3, ShieldCheck, Calendar } from "lucide-react";
-// Cambia esto en los tres archivos:
-import Footer from "./components/Footer";
+import { ArrowRight, Calendar } from "lucide-react";
+
+// 🌟 ELIMINAMOS LA IMPORTACIÓN MANUAL DEL FOOTER
+
 export default async function HomePage() {
   const user = await currentUser();
 
@@ -14,7 +15,8 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col justify-between">
+    // 🌟 LIMPIEZA: Quitamos min-h-screen y flex-col justify-between para evitar duplicidad de altura con el layout global
+    <div className="w-full bg-gradient-to-br from-gray-50 to-white">
       
       {/* Hero Section Mejorado */}
       <div className="pt-28 pb-20 px-6">
@@ -61,7 +63,7 @@ export default async function HomePage() {
             <p className="text-xl text-gray-600">Es muy sencillo. Solo sigue estos 4 pasos</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-10">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
             {/* Paso 1 */}
             <div className="text-center group">
               <div className="mx-auto w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center text-5xl mb-6 group-hover:scale-110 transition duration-300">
@@ -124,8 +126,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* 🌟 Footer Profesional Adaptado */}
-      <Footer variant="light" />
     </div>
   );
 }

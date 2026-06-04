@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache"; // 🌟 CORREGIDO AQUÍ
+import { revalidatePath } from "next/cache"; 
 import { createAuditLog } from "@/lib/audit"; 
 
 export async function PUT(
@@ -17,7 +17,7 @@ export async function PUT(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 1. Validar propiedad del evento e incluir al usuario de nuestra BDD de un solo golpe
+    // 1. Validar propiedad del evento e incluir al usuario
     const event = await prisma.event.findUnique({
       where: { id },
       include: { user: true }
@@ -27,7 +27,7 @@ export async function PUT(
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    // Validar que el usuario logueado en Clerk sea el dueño usando la relación
+    // Validar pertenencia
     if (event.user.clerkId !== clerkUser.id) {
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
@@ -44,7 +44,6 @@ export async function PUT(
     const accessCode = rawEntries.accessCode as string;
     const capacityRaw = rawEntries.capacity as string;
 
-    // Validación inmune a errores del input de privacidad que arreglamos antes
     const isPublic = rawEntries.isPublic === "true" || rawEntries.isPublic === true;
 
     if (!name || !date) {
@@ -69,13 +68,13 @@ export async function PUT(
       },
     });
 
-    // 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA CON LOS DATOS DE LA RELACIÓN SEGURA
+    // 4. Escribir el Log de Auditoría
     await createAuditLog({
       action: "EVENT_UPDATE",
       entity: "EVENT",
       entityId: id,
-      userId: event.user.id,          // ID interno de tu tabla User obtenido del include
-      userEmail: event.user.email,    // Email guardado en tu base de datos
+      userId: event.user.id,
+      userEmail: event.user.email,
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
       details: `Editó el evento "${updatedEvent.name}". Estado actual -> Público: ${updatedEvent.isPublic}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
     });
@@ -93,7 +92,7 @@ export async function PUT(
   }
 }
 
-// ==================== ELIMINAR EVENTO (BLINDADO) ====================
+// ==================== ELIMINAR EVENTO (BLINDADO Y CON CASCADA) ====================
 
 export async function DELETE(
   request: Request,
@@ -107,38 +106,46 @@ export async function DELETE(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 1. Buscar el evento PRIMERO para validar y guardar sus datos en memoria
+    // 1. Buscar el evento e incluir la relación del dueño
     const event = await prisma.event.findUnique({
       where: { id },
-      include: { user: true } // Traemos la relación del usuario
+      include: { user: true }
     });
 
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    // 2. Validar que el usuario que borra sea el dueño
+    // 2. Validar que el usuario que borra sea el dueño legítimo
     if (event.user.clerkId !== clerkUser.id) {
       return NextResponse.json({ error: "No tienes permiso para eliminar este evento" }, { status: 403 });
     }
 
-    // 3. 🌟 ESCRIBIR EL LOG DE AUDITORÍA ANTES DE BORRAR 🌟
+    // 3. Escribir el Log de Auditoría ANTES del borrado físico
     await createAuditLog({
       action: "EVENT_DELETE",
       entity: "EVENT",
       entityId: id,
-      userId: event.userId,          // ID interno del usuario dueño
-      userEmail: event.user.email,   // Email del dueño
+      userId: event.userId,
+      userEmail: event.user.email,
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `Eliminó de forma permanente el evento: "${event.name}" (Número de evento: ${event.eventNumber || 'N/A'})`
+      details: `Eliminó de forma permanente el evento: "${event.name}" (Número de evento: ${event.eventNumber || 'N/A'}) junto con todos sus asistentes vinculados.`
     });
 
-    // 4. Ahora sí, procedemos a borrar de forma segura en Neon
-    await prisma.event.delete({
-      where: { id }
+    // 4. 🌟 TRANSACCIÓN EN CASCADA: Limpiamos los hijos primero y luego el padre de forma atómica
+    await prisma.$transaction(async (tx) => {
+      // A. Borrar todos los asistentes vinculados al evento primero para remover la restricción de FK
+      await tx.attendee.deleteMany({
+        where: { eventId: id }
+      });
+
+      // B. Ahora sí, eliminamos el evento de forma segura
+      await tx.event.delete({
+        where: { id }
+      });
     });
 
-    // 5. Revalidar las rutas afectadas
+    // 5. Revalidar rutas
     revalidatePath("/eventos");
 
     return NextResponse.json({ success: true });
@@ -147,7 +154,7 @@ export async function DELETE(
     console.error("❌ Error crítico en método DELETE de eventos:", error);
     
     return NextResponse.json({ 
-      error: "No se pudo eliminar el evento de forma correcta debido a un conflicto interno." 
+      error: "No se pudo eliminar el evento debido a un fallo en el procesamiento de los datos internos." 
     }, { status: 500 });
   }
 }

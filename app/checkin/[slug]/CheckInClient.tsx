@@ -1,4 +1,5 @@
 // app/checkin/[slug]/CheckInClient.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,7 +46,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   const eventDate = new Date(event.date);
   const isEventFinished = differenceInDays(new Date(), eventDate) > 1;
 
-// ==================== EXPORTAR EXCEL ====================
+  // ==================== EXPORTAR EXCEL ====================
   const exportExcel = () => {
     if (attendees.length === 0) {
       alert("No hay asistentes para exportar");
@@ -72,7 +73,6 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   // ==================== EXPORTAR PDF (DISEÑO MINIMALISTA PREMIUM) ====================
   const exportPDF = () => {
-    // 🌟 Usamos las instancias ya importadas estáticamente al inicio del archivo para Next.js
     const doc = new jsPDF('p', 'mm', 'a4');
     
     // --- CONFIGURACIÓN DE COLORES DE MARCA ---
@@ -155,7 +155,6 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       a.checkedInAt ? format(new Date(a.checkedInAt), "dd/MM/yyyy HH:mm") : '-'
     ]);
 
-    // Llamado directo a la función de autoTable usando la API correcta
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -169,16 +168,15 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         textColor: [45, 55, 72]
       },
       headStyles: {
-        fillColor: [26, 32, 44], // Encabezado Charcoal idéntico al general
+        fillColor: [26, 32, 44],
         textColor: [255, 255, 255],
         fontSize: 8,
         fontStyle: 'bold'
       },
       alternateRowStyles: {
-        fillColor: [252, 253, 253] // Fila cebra ultra sutil
+        fillColor: [252, 253, 253]
       },
       didParseCell: function (data) {
-        // Estilización de la columna de Estatus
         if (data.section === 'body' && data.column.index === 4) {
           if (data.cell.raw === '✓ CHECK-IN') {
             data.cell.styles.fontStyle = 'bold';
@@ -187,14 +185,12 @@ export default function CheckInClient({ event }: CheckInClientProps) {
             data.cell.styles.textColor = mutedColor;
           }
         }
-        // Resaltar tipográficamente el código QR
         if (data.section === 'body' && data.column.index === 3) {
           data.cell.styles.fontStyle = 'bold';
         }
       }
     });
 
-    // Agregar pie de página dinámico con paginación
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -208,14 +204,15 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     doc.save(`${event.name.replace(/[^a-z0-9]/gi, '_')}_asistentes.pdf`);
   };
 
-  const handleCheckIn = async (qrCode: string) => { // 🌟 Ahora recibe el código QR
+  // ==================== PROCESAR CHECK-IN ====================
+  const handleCheckIn = async (qrCode: string) => {
     if (isEventFinished) {
       setMessage({ type: 'error', text: "Este evento ya finalizó. No se pueden hacer más check-ins." });
       return;
     }
 
     try {
-      // 🌟 Apuntamos a la nueva API pasándole el código QR y el ID del Evento
+      // 🌟 CORREGIDO: Apuntando a la ruta física real de tu API de Check-In corporativa
       const res = await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -232,7 +229,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         ));
         setMessage({ type: 'success', text: `✅ Check-in exitoso: ${data.attendee.name}` });
       } else {
-        // Muestra el error estructurado de la API (ej: Si el pase ya fue usado)
+        // Muestra el error estructurado del backend (ej: "⚠️ ¡ALERTA DE PLAGIO! Este pase ya ingresó...")
         setMessage({ type: 'error', text: data.error || "No se pudo procesar el acceso" });
       }
     } catch (error) {
@@ -240,7 +237,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
     }
   };
 
-    const shareEvent = () => {
+  const shareEvent = () => {
     const link = `${window.location.origin}/evento/${event.slug}`;
     const text = event.isPublic 
       ? `Únete a mi evento: ${event.name}\n${link}`
@@ -268,11 +265,9 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         scanner.clear();
         setScanning(false);
 
-        // Extraemos el código único del QR de la URL decodificada
         const qrCode = decodedText.split('/').pop();
 
         if (qrCode) {
-          // 🌟 Disparamos directo a la API usando el código QR
           await handleCheckIn(qrCode);
         } else {
           setMessage({ type: 'error', text: "Código QR inválido" });
@@ -288,10 +283,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
   return (
     <div className="space-y-8">
-      {/* Título del Evento + Botón Compartir */}
       <div className="flex justify-between items-start">
-
-        {/* Botón Compartir - Solo visible si el evento NO ha finalizado */}
         {!isEventFinished && (
           <button
             onClick={shareEvent}
@@ -328,7 +320,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </div>
       </div>
 
-      {/* Botón Escanear QR - Más grande */}
+      {/* Botón Escanear QR */}
       <button
         onClick={() => setScanning(!scanning)}
         disabled={isEventFinished}
@@ -361,14 +353,12 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         </button>
       </div>
 
-      {/* Escáner */}
       {scanning && (
         <div className="bg-black p-8 rounded-3xl">
           <div id="qr-scanner" className="mx-auto max-w-[320px]"></div>
         </div>
       )}
 
-      {/* Mensaje */}
       {message && (
         <div className={`p-4 rounded-2xl ${message.type === 'success' ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'}`}>
           {message.text}

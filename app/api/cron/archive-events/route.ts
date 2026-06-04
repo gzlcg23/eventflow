@@ -39,17 +39,17 @@ export async function GET(request: Request) {
       });
     }
 
-    // 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA SIN VIOLAR LA LLAVE FORÁNEA
-await createAuditLog({
-  action: "SYSTEM_CRON_ARCHIVE",
-  entity: "EVENT",
-  entityId: "SYSTEM_BULK_ARCHIVE",
-  // 🛑 Quitamos 'userId: "system_cron"' para evitar el error P2003 de PostgreSQL
-  userId: undefined, // O null si tu función createAuditLog lo requiere de forma explícita
-  userEmail: "sistema@eventflow.mx",
-  ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-  details: `🤖 [AUTOMÁTICO] Limpieza ejecutada con éxito por el sistema. Se movieron al archivo histórico profundo ${updateResult.count} eventos con más de ${DIAS_PARA_ARCHIVAR} días de antigüedad.`
-});
+// 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA SIN VIOLAR LA LLAVE FORÁNEA
+    await createAuditLog({
+      action: "SYSTEM_CRON_ARCHIVE",
+      entity: "EVENT",
+      entityId: "SYSTEM_BULK_ARCHIVE",
+      // 🛑 Omitimos o enviamos undefined en userId para que no busque un usuario inexistente
+      userId: undefined, 
+      userEmail: "sistema@eventflow.mx",
+      ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
+      details: `🤖 [AUTOMÁTICO] Mantenimiento ejecutado con éxito. Se movieron al archivo histórico profundo ${updateResult.count} eventos con más de ${DIAS_PARA_ARCHIVAR} días de antigüedad.`
+    });
 
     console.log(`📦 Se archivaron automáticamente ${updateResult.count} eventos.`);
 

@@ -1,5 +1,6 @@
 // app/admin/page.tsx
-export const dynamic = 'force-dynamic'; // 🌟 Desactiva el caché para esta ruta de administración
+export const dynamic = 'force-dynamic'; // 🌟 Fuerza a Next.js a leer Neon en tiempo real en cada recarga
+
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
@@ -26,8 +27,9 @@ export default async function AdminPage() {
       date: true,
       isPublic: true,
       isActive: true,
+      archived: true,         // 🌟 CRUCIAL: Si no lo agregas aquí, el Frontend no sabe qué está archivado
       activatedAt: true,
-      deactivationReason: true,     // ← Agregado
+      deactivationReason: true,
       createdAt: true,
       user: {
         select: {

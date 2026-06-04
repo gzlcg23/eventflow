@@ -15,9 +15,11 @@ export async function GET(request: Request) {
     }
 
     // 2. CONFIGURACIÓN DE LA VENTANA DE TIEMPO (60 días / 2 meses de colchón)
-    const DIAS_PARA_ARCHIVAR = 60; 
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() - DIAS_PARA_ARCHIVAR);
+    // En tu route.ts:
+const DIAS_PARA_ARCHIVAR = 60; 
+const targetDate = new Date();
+targetDate.setDate(targetDate.getDate() - DIAS_PARA_ARCHIVAR);
+targetDate.setHours(23, 59, 59, 999); // 🌟 Asegura abarcar todo el día límite
 
     // 3. OPTIMIZACIÓN: updateMany en una sola query masiva
     const updateResult = await prisma.event.updateMany({

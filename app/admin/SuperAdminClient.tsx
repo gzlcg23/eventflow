@@ -33,29 +33,34 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     setMounted(true);
   }, []);
 
-  // Aquí abajo continúa tu useMemo tal cual lo tenías...
-
-    const filteredEvents = useMemo(() => {
+// ==================== FILTRADO DE EVENTOS OPTIMIZADO ====================
+  const filteredEvents = useMemo(() => {
     let result = [...initialEvents];
 
+    // 1. Filtro por Buscador (Texto)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       result = result.filter(event =>
         event.name.toLowerCase().includes(searchLower) ||
-        `${event.user.firstName} ${event.user.lastName}`.toLowerCase().includes(searchLower) ||
-        event.user.email.toLowerCase().includes(searchLower) ||
+        `${event.user?.firstName} ${event.user?.lastName}`.toLowerCase().includes(searchLower) ||
+        event.user?.email.toLowerCase().includes(searchLower) ||
         (event.eventNumber && event.eventNumber.toLowerCase().includes(searchLower))
       );
     }
 
+    // 2. Filtro Estratégico por Estado (ON / OFF / Cron Archived)
     if (statusFilter === "active") {
       result = result.filter(e => e.isActive && !e.archived);
     } else if (statusFilter === "inactive") {
       result = result.filter(e => !e.isActive && !e.archived);
     } else if (statusFilter === "archived") {
       result = result.filter(e => e.archived);
+    } else if (statusFilter === "all") {
+      // 💡 CORRECCIÓN CLAVE: Cuando ven "Todos", ocultamos los archivados automáticos del cron
+      result = result.filter(e => !e.archived);
     }
 
+    // 3. Filtro por Periodo de Tiempo
     const now = new Date();
     if (periodFilter !== 'all') {
       result = result.filter(event => {
@@ -70,9 +75,6 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
         }
       });
     }
-
-    // 🌟 AQUÍ VA LA LÍNEA PARA EVITAR QUE LA TABLA SE QUEDE VACÍA AL FILTRAR
-    setCurrentPage(1);
 
     return result;
   }, [initialEvents, searchTerm, statusFilter, periodFilter]);
@@ -345,6 +347,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   };
 // ==================== FUNCIÓN NUEVA: DESCARGAR ZIP ====================
   const downloadArchive = async (eventId: string, eventName: string) => {
+    
     if (!confirm(`¿Descargar archivo completo de "${eventName}" antes de archivar?`)) return;
 
     try {
@@ -601,6 +604,15 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                 const daysToEvent = differenceInDays(eventDate, new Date());
                 const isOverdue = !event.isActive && daysToEvent < 0;
 
+                // 🌟 NUEVA LÓGICA DE COLOR: Si está archivado, gana el color gris de congelado
+                    const statusColor = event.archived 
+                      ? 'bg-zinc-400' 
+                      : event.isActive 
+                        ? 'bg-emerald-500' 
+                        : isOverdue 
+                          ? 'bg-red-500' 
+                          : 'bg-yellow-500';
+
                 return (
                   <tr key={event.id} className="hover:bg-gray-50 transition">
                     <td className="p-6 font-medium">{event.name}</td>
@@ -615,8 +627,9 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
                     <td className="p-6">
                       {event.isPublic ? <Unlock className="w-5 h-5 text-green-600" /> : <Lock className="w-5 h-5 text-amber-600" />}
                     </td>
+                    {/* Célula del Estado Corregida */}
                     <td className="p-6">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${event.isActive ? 'bg-emerald-500' : isOverdue ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusColor}`}>
                         <div className="w-3 h-3 bg-white rounded-full"></div>
                       </div>
                     </td>

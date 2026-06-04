@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner'; // 🌟 Integrado para notificaciones profesionales
 
 export default function NuevoEventoPage() {
   const router = useRouter();
@@ -11,12 +12,11 @@ export default function NuevoEventoPage() {
   const [isPublic, setIsPublic] = useState(true);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Evita la recarga y el comportamiento de Server Action
+    e.preventDefault(); 
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
     
-    // Estructuramos los datos en un JSON plano e higiénico
     const payload = {
       name: formData.get("name"),
       description: formData.get("description"),
@@ -27,34 +27,38 @@ export default function NuevoEventoPage() {
       accessCode: formData.get("accessCode"),
     };
 
+    // Mostramos estado de carga elegante
+    const toastId = toast.loading("Guardando nuevo evento...");
+
     try {
       const response = await fetch('/api/eventos/nuevo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ← OBLIGATORIO: Envía las cookies de sesión de Clerk a la API
+        credentials: 'include', 
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (result.success) {
+        toast.success("¡Evento registrado en el sistema!", { id: toastId });
         setSuccessData(result.event);
       } else {
-        alert("Error: " + result.error);
+        toast.error(`Error: ${result.error}`, { id: toastId });
       }
     } catch (err) {
-      alert("Error de conexión. Inténtalo de nuevo más tarde.");
+      toast.error("Error de conexión. Inténtalo de nuevo más tarde.", { id: toastId });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Pantalla de éxito
+  // ==================== PANTALLA DE ÉXITO ====================
   if (successData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="bg-white rounded-3xl shadow-xl max-w-lg w-full p-10 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Evento Creado con éxito</h1>
           <p className="text-xl font-semibold text-amber-600 mb-8">{successData.name}</p>
@@ -92,88 +96,95 @@ export default function NuevoEventoPage() {
     );
   }
 
-  // ==================== FORMULARIO NORMAL ====================
+  // ==================== FORMULARIO NORMAL CORREGIDO ====================
   return (
-    <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Crear Nuevo Evento</h1>
+    // 🌟 Añadimos un contenedor padre con w-full y flex-1 para neutralizar el layout
+    <div className="w-full flex-1 py-12 px-4 sm:px-6 lg:px-8 bg-gray-50/50">
+      {/* 🌟 max-w-2xl mx-auto ahora funciona perfecto y w-full evita que flexbox lo comprima */}
+      <div className="max-w-2xl mx-auto bg-white p-8 sm:p-10 rounded-3xl border border-gray-100 shadow-sm w-full">
+        <h1 className="text-3xl font-bold mb-2 text-gray-900">Crear Nuevo Evento</h1>
+        <p className="text-sm text-gray-500 mb-8">Completa los campos para registrar un nuevo evento en la plataforma.</p>
 
-      <form onSubmit={handleFormSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium mb-2">Nombre del Evento *</label>
-          <input name="name" type="text" required className="w-full px-4 py-3 border rounded-2xl" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Descripción</label>
-          <textarea name="description" rows={3} className="w-full px-4 py-3 border rounded-2xl" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Fecha y Hora *</label>
-          <input name="date" type="datetime-local" required className="w-full px-4 py-3 border rounded-2xl" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Ubicación</label>
-          <input name="location" type="text" className="w-full px-4 py-3 border rounded-2xl" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Link del Mapa (Opcional)</label>
-          <input name="locationUrl" type="url" className="w-full px-4 py-3 border rounded-2xl" />
-        </div>
-
-        {/* Tipo de Evento */}
-        <div>
-          <label className="block text-sm font-medium mb-3">Tipo de Evento</label>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="radio" 
-                name="isPublic" 
-                value="true" 
-                checked={isPublic}
-                onChange={() => setIsPublic(true)}
-              />
-              Público
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="radio" 
-                name="isPublic" 
-                value="false" 
-                checked={!isPublic}
-                onChange={() => setIsPublic(false)}
-              />
-              Privado
-            </label>
-          </div>
-        </div>
-
-        {/* Campo Código de Acceso */}
-        {!isPublic && (
+        <form onSubmit={handleFormSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Código de Acceso (mínimo 4 caracteres - máximo 12 caracteres)</label>
-            <input 
-              name="accessCode" 
-              type="text" 
-              required 
-              minLength={4}
-              maxLength={12}
-              className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
-              placeholder="EJEMPLO2026"
-            />
+            <label className="block text-sm font-medium mb-2 text-gray-700">Nombre del Evento *</label>
+            <input name="name" type="text" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-black text-white py-4 rounded-2xl font-medium hover:bg-gray-800 transition disabled:opacity-70"
-        >
-          {isLoading ? "Creando evento..." : "Crear Evento"}
-        </button>
-      </form>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Descripción</label>
+            <textarea name="description" rows={3} className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Fecha y Hora *</label>
+            <input name="date" type="datetime-local" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Ubicación</label>
+            <input name="location" type="text" className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700">Link del Mapa (Opcional)</label>
+            <input name="locationUrl" type="url" className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
+          </div>
+
+          {/* Tipo de Evento */}
+          <div>
+            <label className="block text-sm font-medium mb-3 text-gray-700">Tipo de Evento</label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-gray-800">
+                <input 
+                  type="radio" 
+                  name="isPublic" 
+                  value="true" 
+                  checked={isPublic}
+                  className="w-4 h-4 text-black border-gray-300 focus:ring-black accent-black"
+                  onChange={() => setIsPublic(true)}
+                />
+                Público
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-gray-800">
+                <input 
+                  type="radio" 
+                  name="isPublic" 
+                  value="false" 
+                  checked={!isPublic}
+                  className="w-4 h-4 text-black border-gray-300 focus:ring-black accent-black"
+                  onChange={() => setIsPublic(false)}
+                />
+                Privado
+              </label>
+            </div>
+          </div>
+
+          {/* Campo Código de Acceso */}
+          {!isPublic && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="block text-sm font-medium mb-2 text-gray-700">Código de Acceso (mínimo 4 - máximo 12 caracteres)</label>
+              <input 
+                name="accessCode" 
+                type="text" 
+                required 
+                minLength={4}
+                maxLength={12}
+                className="w-full px-4 py-3 border border-gray-200 rounded-2xl uppercase tracking-widest font-mono text-center text-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" 
+                placeholder="EJEMPLO2026"
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-black text-white py-4 rounded-2xl font-medium hover:bg-gray-800 transition disabled:opacity-70 mt-4 shadow-sm"
+          >
+            {isLoading ? "Creando evento..." : "Crear Evento"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

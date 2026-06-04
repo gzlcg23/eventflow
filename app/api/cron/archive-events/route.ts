@@ -40,15 +40,15 @@ export async function GET(request: Request) {
     }
 
 // 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA SIN VIOLAR LA LLAVE FORÁNEA
-    await createAuditLog({
-      action: "SYSTEM_CRON_ARCHIVE",
-      entity: "EVENT",
-      entityId: "SYSTEM_BULK_ARCHIVE",
-      // 🛑 Omitimos o enviamos undefined en userId para que no busque un usuario inexistente
-      userId: undefined, 
-      userEmail: "sistema@eventflow.mx",
-      ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `🤖 [AUTOMÁTICO] Mantenimiento ejecutado con éxito. Se movieron al archivo histórico profundo ${updateResult.count} eventos con más de ${DIAS_PARA_ARCHIVAR} días de antigüedad.`
+    await prisma.auditLog.create({
+      data: {
+        action: "SYSTEM_CRON_ARCHIVE",
+        entity: "EVENT",
+        entityId: "SYSTEM_BULK_ARCHIVE",
+        userEmail: "sistema@eventflow.mx",
+        ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
+        details: `🤖 [AUTOMÁTICO] Se archivaron ${updateResult.count} eventos con más de ${DIAS_PARA_ARCHIVAR} días de antigüedad.`,
+      }
     });
 
     console.log(`📦 Se archivaron automáticamente ${updateResult.count} eventos.`);

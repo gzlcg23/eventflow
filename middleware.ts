@@ -26,6 +26,12 @@ const isCsrfProtectedPage = createRouteMatcher([
   '/eventos/editar/(.*)',
 ]);
 
+// 3. 🌟 NUEVO MATCHER: Rutas de administración que Clerk protegerá de raíz
+const isAdminRoute = createRouteMatcher([
+  '/admin(.*)',
+  '/api/admin(.*)'
+]);
+
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { pathname } = req.nextUrl;
 
@@ -34,10 +40,17 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
-  // B. Proteger todas las demás rutas privadas con Clerk
-  await auth.protect();
+  // B. 🌟 ESCUDO DE RAÍZ PARA ADMIN: Si intenta entrar a /admin o pegarle a /api/admin,
+  // Clerk valida que esté logueado. Si no, lo rebota aquí mismo sin tocar Neon ni tus lambdas.
+  if (isAdminRoute(req)) {
+    await auth.protect();
+  } else {
+    // Proteger todas las demás rutas privadas convencionales con Clerk
+    await auth.protect();
+  }
 
-if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+  // C. Validación de métodos mutables (CSRF)
+  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
     
     // REGLA DE ORO: Si la petición va a nuestras APIs optimizadas o de administración protegida por Clerk, NO le exijas CSRF token
     const isExemptedApi = pathname.startsWith('/api/checkin') || 

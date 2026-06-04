@@ -1,5 +1,5 @@
 //  app/ayuda/layout.tsx
-import Footer from "../components/Footer";
+
 
 export default function AyudaLayout({
   children,
@@ -11,7 +11,7 @@ export default function AyudaLayout({
       <div className="flex-1 w-full px-6 py-10">
         {children}
       </div>
-      <Footer variant="light" />
+      
     </div>
   );
 }

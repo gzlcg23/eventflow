@@ -96,8 +96,9 @@ export default function EventosPage() {
   if (loading) return <div className="p-12 text-center">Cargando eventos...</div>;
 
   // Separar eventos activos y finalizados
-  const activeEvents = events.filter(e => e.isActive);
-  const pastEvents = events.filter(e => !e.isActive);
+  // 🌟 CORRECCIÓN TÉCNICA: Filtramos para ignorar los eventos archivados por el Cron Job o el sistema
+  const activeEvents = events.filter(e => e.isActive && !e.archived);
+  const pastEvents = events.filter(e => !e.isActive && !e.archived);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Copy, Edit3, Trash2, ExternalLink, Scan, Lock, Download, Share2, AlertCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { toast } from "sonner"; // 🌟 1. IMPORTA TOAST AL INICIO
 
 export default function EventosPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -28,10 +29,10 @@ export default function EventosPage() {
   // ==================== EXPORTAR A EXCEL ====================
   const exportExcel = () => {
     if (events.length === 0) {
-      alert("No hay eventos para exportar");
+      toast.warning("No hay eventos disponibles para exportar"); // 🌟 Cambiado
       return;
     }
-
+try {
     const data = events.map(event => ({
       "Número": event.eventNumber || '',
       "Evento": event.name,
@@ -48,12 +49,17 @@ export default function EventosPage() {
     XLSX.utils.book_append_sheet(wb, ws, "Mis Eventos");
 
     XLSX.writeFile(wb, `Mis_Eventos_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
+      
+      toast.success("📊 Excel descargado con éxito"); // 🌟 Cambiado
+    } catch (err) {
+      toast.error("No se pudo generar el archivo de Excel");
+    }
   };
 
   const copyPublicLink = (slug: string) => {
     const link = `${window.location.origin}/evento/${slug}`;
     navigator.clipboard.writeText(link);
-    alert("✅ Link público copiado");
+    toast.success("🔗 Enlace público copiado al portapapeles"); // 🌟 Cambiado
   };
 
   const shareEvent = (event: any) => {
@@ -69,23 +75,25 @@ export default function EventosPage() {
       });
     } else {
       navigator.clipboard.writeText(text);
-      alert("✅ Enlace copiado. Puedes pegarlo en WhatsApp, Instagram, etc.");
+      toast.info("✅ Enlace copiado. ¡Ya puedes pegarlo en tus redes sociales!"); // 🌟 Cambiado
     }
   };
 
   const deleteEvent = async (id: string, name: string) => {
     if (!confirm(`¿Estás seguro de eliminar "${name}"?\nEsta acción es irreversible.`)) return;
 
+    const toastId = toast.loading("Eliminando evento..."); // 🌟 Notificación de carga asíncrona
+
     try {
       const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        alert("Evento eliminado");
+        toast.success("Evento eliminado correctamente", { id: toastId }); // 🌟 Éxito
         cargarEventos();
       } else {
-        alert("No se pudo eliminar el evento");
+        toast.error("No tienes permisos o no se pudo eliminar este evento", { id: toastId }); // 🌟 Fallo
       }
     } catch (error) {
-      alert("Error de conexión");
+      toast.error("Error de red. Revisa tu conexión a internet", { id: toastId });
     }
   };
 

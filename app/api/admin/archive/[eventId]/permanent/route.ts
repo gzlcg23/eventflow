@@ -8,7 +8,7 @@ export async function DELETE(
   { params }: { params: { eventId: string } }
 ) {
   try {
-    // 1. Candado de seguridad: Validar que el usuario sea un SUPER_ADMIN
+    // 1. Candado de seguridad: Validar que sea un SUPER_ADMIN
     const clerkUser = await currentUser();
     if (!clerkUser) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -22,32 +22,39 @@ export async function DELETE(
       return NextResponse.json({ error: "Prohibido" }, { status: 403 });
     }
 
-    // Extraemos el eventId que viene de la URL de Next.js de forma dinámica
     const { eventId } = params;
 
-    // 2. 🌟 TRANSACCIÓN EN CASCADA: Limpiamos dependencias para evitar errores de llave foránea
+    // 2. 🌟 BORRADO EN CASCADA COMPLETO
+    // Ejecutamos deleteMany en orden en todas las tablas que puedan estar amarradas a tu eventId
     await prisma.$transaction([
-      // Paso A: Borrar todos los asistentes asociados a este evento
+      
+      // A) Borrar asistentes (La principal dependencia)
       prisma.attendee.deleteMany({
         where: { eventId: eventId }
       }),
 
-      // Nota: Si en tu schema.prisma tienes otras tablas que apunten a eventId 
-      // (como 'invitations' o 'payments'), agrega sus deleteMany aquí arriba.
+      // B) 🔍 DESCOMENTA las líneas de abajo si existen en tu archivo 'schema.prisma'
+      // (Si no existen o se llaman diferente, déjalas comentadas o bórralas)
+      
+      /*
+      prisma.formField?.deleteMany({ where: { eventId: eventId } }),
+      prisma.ticket?.deleteMany({ where: { eventId: eventId } }),
+      prisma.invitation?.deleteMany({ where: { eventId: eventId } }),
+      prisma.payment?.deleteMany({ where: { eventId: eventId } }),
+      */
 
-      // Paso B: Ahora que la base de datos está libre de registros hijos, borramos el evento raíz
+      // C) AL FINAL: Una vez limpias las tablas hijas, destruimos el evento principal
       prisma.event.delete({
         where: { id: eventId }
       })
     ]);
 
-    // 3. Respuesta exitosa para que el frontend (res.ok) se ejecute e indique el éxito
-    return NextResponse.json({ success: true, message: "Evento y sus registros eliminados con éxito." });
+    return NextResponse.json({ success: true, message: "Evento eliminado por completo en cascada." });
 
   } catch (error: any) {
-    console.error("🚨 Error crítico en el backend de borrado permanente:", error);
+    console.error("🚨 Error en el backend de borrado permanente:", error);
     return NextResponse.json(
-      { error: "Error interno al intentar eliminar el evento de forma permanente." },
+      { error: "Error interno en el servidor al procesar el borrado." },
       { status: 500 }
     );
   }

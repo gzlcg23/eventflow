@@ -26,7 +26,7 @@ export default function EventosPage() {
     }
   };
 
-  // ==================== EXPORTAR A EXCEL ====================
+  // ==================== EXPORTAR A EXCEL ===================
   const exportExcel = () => {
     if (events.length === 0) {
       toast.warning("No hay eventos disponibles para exportar"); // 🌟 Cambiado

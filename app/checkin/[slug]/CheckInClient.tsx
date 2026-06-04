@@ -9,6 +9,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format, differenceInDays } from 'date-fns';
+import { toast } from "sonner"; // 🌟 1. IMPORTA TOAST AL INICIO
 
 interface Attendee {
   id: string;
@@ -49,7 +50,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
   // ==================== EXPORTAR EXCEL ====================
   const exportExcel = () => {
     if (attendees.length === 0) {
-      alert("No hay asistentes para exportar");
+      toast.warning("No hay asistentes para exportar"); // 🌟 Cambiado
       return;
     }
 
@@ -247,7 +248,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       navigator.share({ title: event.name, text });
     } else {
       navigator.clipboard.writeText(text);
-      alert("✅ Enlace copiado.");
+      toast.success("✅ Enlace copiado."); // 🌟 Cambiado
     }
   };
 

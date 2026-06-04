@@ -14,28 +14,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Calcular la ventana de tiempo (Hace 60 días)
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    // 2. CONFIGURACIÓN DE LA VENTANA DE TIEMPO (60 días / 2 meses de colchón)
+    const DIAS_PARA_ARCHIVAR = 60; 
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - DIAS_PARA_ARCHIVAR);
 
-    // 2. OPTIMIZACIÓN: updateMany en una sola query
+    // 3. OPTIMIZACIÓN: updateMany en una sola query masiva
     const updateResult = await prisma.event.updateMany({
       where: {
-        isActive: false,
         archived: false,
-        date: { lt: sixtyDaysAgo }
+        date: { lt: targetDate } // Agarra cualquier evento de hace más de 2 meses (tanto activos como inactivos)
       },
       data: {
+        isActive: false, // Nos aseguramos de apagarlo por seguridad si seguía prendido
         archived: true,
         archivedAt: new Date()
       }
     });
 
     if (updateResult.count === 0) {
-      return NextResponse.json({ success: true, message: "No hay eventos viejos para archivar en este ciclo." });
+      return NextResponse.json({ 
+        success: true, 
+        message: `Mantenimiento al día. No se encontraron eventos de más de ${DIAS_PARA_ARCHIVAR} días para archivar.` 
+      });
     }
 
-    // 3. 🌟 ESCRIBIR EL LOG DE AUDITORÍA CON LA FIRMA DEL SISTEMA
+    // 4. 🌟 ESCRIBIR EL LOG DE AUDITORÍA CON LA FIRMA DEL SISTEMA
     await createAuditLog({
       action: "SYSTEM_CRON_ARCHIVE",
       entity: "EVENT",
@@ -43,7 +47,7 @@ export async function GET(request: Request) {
       userId: "system_cron", // El bot del sistema firma la acción
       userEmail: "sistema@eventflow.mx",
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `Limpieza automatizada ejecutada con éxito. Se movieron al archivo histórico profundo ${updateResult.count} eventos con más de 60 días de antigüedad.`
+      details: `Limpieza automatizada ejecutada con éxito. Se movieron al archivo histórico profundo ${updateResult.count} eventos con más de ${DIAS_PARA_ARCHIVAR} días de antigüedad.`
     });
 
     console.log(`📦 Se archivaron automáticamente ${updateResult.count} eventos.`);

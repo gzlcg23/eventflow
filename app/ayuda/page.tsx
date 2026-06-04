@@ -128,7 +128,6 @@ export default function AyudaPage() {
 
       </div>
 
-      {/* 🌟 ELIMINAMOS COMPLETAMENTE EL FOOTER MANUAL DE AQUÍ ABAJO */}
     </div>
   );
 }

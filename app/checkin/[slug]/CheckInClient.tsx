@@ -216,7 +216,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
 
     try {
       // 🌟 Apuntamos a la nueva API pasándole el código QR y el ID del Evento
-      const res = await fetch('/api/registro/checkin', {
+      const res = await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ qrCode, eventId: event.id }),

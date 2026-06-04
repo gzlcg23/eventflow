@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { eventId: string } }
+  context: { params: any } // 🌟 Usamos context completo para máxima compatibilidad
 ) {
   try {
     // 1. Candado de seguridad: Validar que sea un SUPER_ADMIN
@@ -22,39 +22,37 @@ export async function DELETE(
       return NextResponse.json({ error: "Prohibido" }, { status: 403 });
     }
 
-    const { eventId } = params;
+    // 🌟 SOLUCIÓN AL UNDEFINED: Forzamos la resolución de los params de Next.js
+    // Soportamos tanto lectura directa como promesas (Next.js 14/15)
+    const params = await context.params;
+    const eventId = params?.eventId;
 
-    // 2. 🌟 BORRADO EN CASCADA COMPLETO
-    // Ejecutamos deleteMany en orden en todas las tablas que puedan estar amarradas a tu eventId
+    // Control de pánico: Si por algún motivo sigue vacío, detenemos la query antes de que Prisma falle
+    if (!eventId || eventId === "undefined") {
+      return NextResponse.json({ error: "El ID del evento es requerido y no fue detectado en la URL." }, { status: 400 });
+    }
+
+    console.log(`🗑️ Iniciando borrado permanente en cascada para el evento ID: ${eventId}`);
+
+    // 2. Transacción relacional segura
     await prisma.$transaction([
-      
-      // A) Borrar asistentes (La principal dependencia)
+      // Paso A: Borrar los asistentes vinculados a este ID de evento confirmado
       prisma.attendee.deleteMany({
         where: { eventId: eventId }
       }),
 
-      // B) 🔍 DESCOMENTA las líneas de abajo si existen en tu archivo 'schema.prisma'
-      // (Si no existen o se llaman diferente, déjalas comentadas o bórralas)
-      
-      /*
-      prisma.formField?.deleteMany({ where: { eventId: eventId } }),
-      prisma.ticket?.deleteMany({ where: { eventId: eventId } }),
-      prisma.invitation?.deleteMany({ where: { eventId: eventId } }),
-      prisma.payment?.deleteMany({ where: { eventId: eventId } }),
-      */
-
-      // C) AL FINAL: Una vez limpias las tablas hijas, destruimos el evento principal
+      // Paso B: Borrar el evento principal
       prisma.event.delete({
         where: { id: eventId }
       })
     ]);
 
-    return NextResponse.json({ success: true, message: "Evento eliminado por completo en cascada." });
+    return NextResponse.json({ success: true, message: "Evento y sus datos eliminados con éxito." });
 
   } catch (error: any) {
-    console.error("🚨 Error en el backend de borrado permanente:", error);
+    console.error("🚨 Error real en el backend de borrado permanente:", error);
     return NextResponse.json(
-      { error: "Error interno en el servidor al procesar el borrado." },
+      { error: "Error interno en el servidor al procesar el borrado permanente." },
       { status: 500 }
     );
   }

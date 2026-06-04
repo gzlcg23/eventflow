@@ -1,25 +1,26 @@
 // app/ayuda/page.tsx
 import { ArrowRight, Mail, Phone, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import Footer from "../components/Footer"; // 🌟 Importamos el Footer (Ajusta a "📂 ../components/Footer" si tu carpeta está en app/components)
+
+// 🌟 ELIMINAMOS LA IMPORTACIÓN MANUAL DEL FOOTER
 
 export default function AyudaPage() {
   return (
-    /* 🌟 CAMBIO CLAVE: Forzamos un contenedor flexible que ocupe todo el alto de pantalla */
-    <div className="min-h-screen flex flex-col justify-between w-full bg-gray-50/30">
+    // 🌟 LIMPIEZA: Quitamos min-h-screen y flex-col para que use el layout global de forma natural
+    <div className="w-full bg-gray-50/30 py-12">
       
-      {/* Todo tu contenido actual envuelto para que respire bien */}
-      <div className="max-w-5xl mx-auto p-8 pb-24 w-full flex-1">
+      {/* Contenido principal envuelto perfectamente */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
         
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-4">Centro de Ayuda</h1>
+          <h1 className="text-5xl font-bold mb-4 text-gray-900">Centro de Ayuda</h1>
           <p className="text-xl text-gray-600">Todo lo que necesitas saber para usar EventFlow</p>
         </div>
 
         {/* Guía Rápida */}
         <div className="mb-20">
           <h2 className="text-3xl font-semibold mb-10 text-center">Cómo usar EventFlow en 4 pasos</h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="mx-auto w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center text-5xl mb-6">1️⃣</div>
               <h3 className="font-semibold text-xl mb-3">Crea tu evento</h3>
@@ -49,19 +50,19 @@ export default function AyudaPage() {
             <HelpCircle className="w-8 h-8" /> Preguntas Frecuentes
           </h2>
           <div className="space-y-6">
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <h3 className="font-semibold text-lg mb-3">¿Cómo activo un evento privado?</h3>
               <p className="text-gray-600">Envía tu comprobante de pago con tu nombre completo y el número de referencia del evento al soporte. Una vez verificado, lo activaremos en menos de 24 horas.</p>
             </div>
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <h3 className="font-semibold text-lg mb-3">¿Cuántos eventos puedo crear?</h3>
               <p className="text-gray-600">Tienes un límite de 5 eventos activos.</p>
             </div>
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <h3 className="font-semibold text-lg mb-3">¿Los asistentes reciben el QR automáticamente?</h3>
               <p className="text-gray-600">Sí. En cuanto se registran, reciben un correo con su código QR único.</p>
             </div>
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <h3 className="font-semibold text-lg mb-3">¿Puedo ver los reportes en tiempo real?</h3>
               <p className="text-gray-600">Sí, las estadísticas se actualizan en tiempo real mientras haces check-in.</p>
             </div>
@@ -72,13 +73,13 @@ export default function AyudaPage() {
         <div className="mb-20">
           <h2 className="text-3xl font-semibold mb-10 text-center">Videos Tutoriales</h2>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <div className="bg-gray-200 aspect-video rounded-2xl mb-4 flex items-center justify-center">
                 <span className="text-gray-500">📹 Video 1 - Crear tu primer evento</span>
               </div>
               <h3 className="font-semibold">Cómo crear tu primer evento</h3>
             </div>
-            <div className="bg-white border rounded-3xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-8">
               <div className="bg-gray-200 aspect-video rounded-2xl mb-4 flex items-center justify-center">
                 <span className="text-gray-500">📹 Video 2 - Realizar Check-in</span>
               </div>
@@ -89,13 +90,13 @@ export default function AyudaPage() {
         </div>
 
         {/* Contacto Directo */}
-        <div className="bg-white border rounded-3xl p-12 shadow-sm">
+        <div className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-12 shadow-sm">
           <h2 className="text-3xl font-semibold text-center mb-10">¿Aún tienes dudas?</h2>
           <div className="grid md:grid-cols-3 gap-10">
             <div className="text-center">
               <Mail className="w-12 h-12 mx-auto text-emerald-600 mb-4" />
               <h3 className="font-semibold mb-2">Correo Electrónico</h3>
-              <a href="mailto:soporte@eventflow.com.mx" className="text-emerald-600 hover:underline text-lg">
+              <a href="mailto:soporte@eventflow.com.mx" className="text-emerald-600 hover:underline text-lg block break-all">
                 soporte@eventflow.com.mx
               </a>
             </div>
@@ -103,7 +104,7 @@ export default function AyudaPage() {
             <div className="text-center">
               <Phone className="w-12 h-12 mx-auto text-emerald-600 mb-4" />
               <h3 className="font-semibold mb-2">WhatsApp</h3>
-              <a href="https://wa.me/525512345678" target="_blank" className="text-emerald-600 hover:underline text-lg">
+              <a href="https://wa.me/525512345678" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline text-lg">
                 +52 55 1234 5678
               </a>
               <p className="text-sm text-gray-500 mt-1">Lunes a Viernes 9:00 - 18:00</p>
@@ -127,8 +128,7 @@ export default function AyudaPage() {
 
       </div>
 
-      {/* 🌟 EL FOOTER SE QUEDA AQUÍ ABAJO FIJO */}
-      <Footer variant="light" />
+      {/* 🌟 ELIMINAMOS COMPLETAMENTE EL FOOTER MANUAL DE AQUÍ ABAJO */}
     </div>
   );
 }

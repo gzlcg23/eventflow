@@ -1,4 +1,4 @@
-// app/ayuda/page.tsx
+//  app/ayuda/page.tsx
 import { ArrowRight, Mail, Phone, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 

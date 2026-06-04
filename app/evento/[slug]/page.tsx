@@ -1,13 +1,74 @@
 // app/evento/[slug]/page.tsx
+import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import RegistroForm from "./RegistroForm";
 
-export default async function EventoPublicoPage({ 
-  params 
-}: { 
-  params: Promise<{ slug: string }> 
-}) {
+interface Props {
+  params: Promise<{ slug: string }>;
+}
+
+// 🌟 FUNCIÓN DE METADATOS DINÁMICOS (Se ejecuta en el servidor)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params; // Await obligatorio en las últimas versiones de Next.js
+
+  if (!slug) return {};
+
+  try {
+    const event = await prisma.event.findUnique({
+      where: { slug },
+    });
+
+    if (!event) {
+      return {
+        title: "Evento no encontrado | EventFlow",
+        description: "El evento que buscas no existe o ha sido finalizado.",
+      };
+    }
+
+    // URL base de producción para las tarjetas Open Graph
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://eventflow.com.mx";
+    
+    // Si en el futuro agregas imagen al modelo, reemplazas el string vacío por event.bannerUrl
+    const eventImage = "" || `${baseUrl}/images/default-og-banner.png`;
+
+    return {
+      title: `${event.name} | Registro EventFlow`,
+      description: `Regístrate para asistir a ${event.name}. Gestionado a través de EventFlow.`,
+      
+      openGraph: {
+        title: event.name,
+        description: `Regístrate para asistir a ${event.name}.`,
+        url: `${baseUrl}/evento/${slug}`,
+        siteName: "EventFlow",
+        images: [
+          {
+            url: eventImage,
+            width: 1200,
+            height: 630,
+            alt: `Tarjeta de registro para ${event.name}`,
+          },
+        ],
+        type: "article",
+      },
+      
+      twitter: {
+        card: "summary_large_image",
+        title: event.name,
+        description: `Regístrate para asistir a ${event.name}.`,
+        images: [eventImage],
+      },
+    };
+  } catch (error) {
+    console.error("Error al generar metadatos:", error);
+    return {
+      title: "Registro de Evento | EventFlow",
+    };
+  }
+}
+
+// COMPONENTE PRINCIPAL
+export default async function EventoPublicoPage({ params }: Props) {
   const { slug } = await params;
 
   if (!slug) notFound();

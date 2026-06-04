@@ -2,7 +2,7 @@
 import { ArrowRight, Mail, Phone, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
-// 🌟 ELIMINAMOS LA IMPORTACIÓN MANUAL DEL FOOTER
+// 🌟 ELIMINAMOS LA IMPORTACIÓN MANUAL DEL FOOTER2
 
 export default function AyudaPage() {
   return (

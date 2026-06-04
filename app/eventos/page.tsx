@@ -128,7 +128,7 @@ try {
       >
         <span className="hidden md:inline">+</span>
         <span className="md:hidden text-2xl leading-none">+</span>
-        <span className="hidden md:inline">Crear Nuevo Evento</span>
+        <span className="hidden md:inline">Crear Evento</span>
       </Link>
     </div>
   </div>

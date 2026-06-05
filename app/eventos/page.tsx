@@ -68,8 +68,8 @@ const shareEvent = (event: any) => {
   
   // 2. Quitamos el link del final para que el celular no lo duplique nativamente
   const textParaCelular = event.isPublic 
-    ? `¡Estás invitado! Regístrate en el siguiente enlace:`
-    : `Te invito a mi evento privado: ${event.name}\n🔑 Código de acceso obligatorio: ${event.accessCode}\n\nRegístrate aquí:`;
+    ? `Regístrate en el siguiente enlace:`
+    : `Evento privado: ${event.name}\n🔑 Código de acceso obligatorio: ${event.accessCode}\n\nRegístrate aquí:`;
 
   // 3. Para computadoras (Portapapeles), sí estructuramos el link abajo de forma limpia
   const textParaPortapapeles = event.isPublic

@@ -62,24 +62,31 @@ try {
     toast.success("🔗 Enlace público copiado al portapapeles"); // 🌟 Cambiado
   };
 
-  const shareEvent = (event: any) => {
-  // Construimos la URL absoluta apuntando a la ruta pública del evento
+const shareEvent = (event: any) => {
+  // 1. Construimos la URL del evento
   const link = `${window.location.origin}/evento/${event.slug}`;
   
-  // Optimizamos el texto: WhatsApp leerá el link y Next.js pintará la tarjeta con el Banner, el Nombre y los Metadatos.
-  const text = event.isPublic 
-    ? `¡Estás invitado! Regístrate aquí: \n${link}`
-    : `Evento privado: ${event.name}\n🔑 Código de acceso obligatorio: ${event.accessCode}\n\nRegístrate aquí: \n${link}`;
+  // 2. Quitamos el link del final para que el celular no lo duplique nativamente
+  const textParaCelular = event.isPublic 
+    ? `¡Estás invitado! Regístrate en el siguiente enlace:`
+    : `Te invito a mi evento privado: ${event.name}\n🔑 Código de acceso obligatorio: ${event.accessCode}\n\nRegístrate aquí:`;
+
+  // 3. Para computadoras (Portapapeles), sí estructuramos el link abajo de forma limpia
+  const textParaPortapapeles = event.isPublic
+    ? `Regístrate aquí:\n${link}`
+    : `Evento privado: ${event.name}\n🔑 Código de acceso: ${event.accessCode}\n\nRegístrate aquí:\n${link}`;
 
   if (navigator.share) {
+    // En móviles, el sistema operativo pega el 'link' elegantemente al final del 'text'
     navigator.share({
       title: event.name,
-      text: text,
-      url: link, // Es clave pasar la URL aquí de forma explícita para que los dispositivos móviles generen el preview nativo
+      text: textParaCelular, 
+      url: link, // 👈 El celular maneja esto de forma nativa y limpia
     }).catch((err) => console.log("Error al compartir:", err));
   } else {
-    navigator.clipboard.writeText(text);
-    toast.info("✅ Enlace de invitación copiado.");
+    // En PC se copia el texto estructurado directo al portapapeles
+    navigator.clipboard.writeText(textParaPortapapeles);
+    toast.info("✅ Enlace de invitación copiado. ¡Ya puedes pegarlo en tus chats!");
   }
 };
 

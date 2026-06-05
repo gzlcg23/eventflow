@@ -63,21 +63,25 @@ try {
   };
 
   const shareEvent = (event: any) => {
-    const link = `${window.location.origin}/evento/${event.slug}`;
-    const text = event.isPublic 
-      ? `Únete a mi evento: ${event.name}\n${link}`
-      : `Únete a mi evento privado: ${event.name}\nCódigo de acceso: ${event.accessCode}\n${link}`;
+  // Construimos la URL absoluta apuntando a la ruta pública del evento
+  const link = `${window.location.origin}/evento/${event.slug}`;
+  
+  // Optimizamos el texto: WhatsApp leerá el link y Next.js pintará la tarjeta con el Banner, el Nombre y los Metadatos.
+  const text = event.isPublic 
+    ? `¡Estás invitado! Regístrate aquí: \n${link}`
+    : `Evento privado: ${event.name}\n🔑 Código de acceso obligatorio: ${event.accessCode}\n\nRegístrate aquí: \n${link}`;
 
-    if (navigator.share) {
-      navigator.share({
-        title: event.name,
-        text: text,
-      });
-    } else {
-      navigator.clipboard.writeText(text);
-      toast.info("✅ Enlace copiado. ¡Ya puedes pegarlo en tus redes sociales!"); // 🌟 Cambiado
-    }
-  };
+  if (navigator.share) {
+    navigator.share({
+      title: event.name,
+      text: text,
+      url: link, // Es clave pasar la URL aquí de forma explícita para que los dispositivos móviles generen el preview nativo
+    }).catch((err) => console.log("Error al compartir:", err));
+  } else {
+    navigator.clipboard.writeText(text);
+    toast.info("✅ Enlace de invitación copiado.");
+  }
+};
 
   const deleteEvent = async (id: string, name: string) => {
     if (!confirm(`¿Estás seguro de eliminar "${name}"?\nEsta acción es irreversible.`)) return;

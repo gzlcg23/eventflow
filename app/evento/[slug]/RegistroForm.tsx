@@ -1,4 +1,4 @@
-// app/evento/[slug]/RegistroForm.tsx
+// app/evento/[slug]/RegistroForm.tsx 
 'use client';
 
 import { useState } from 'react';

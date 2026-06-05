@@ -1,4 +1,4 @@
-// components/Footer.tsx
+// app/components/Footer.tsx 
 import Link from "next/link";
 
 interface FooterProps {

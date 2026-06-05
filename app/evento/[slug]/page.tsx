@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-// COMPONENTE PRINCIPAL
+// COMPONENTE   PRINCIPAL
 export default async function EventoPublicoPage({ params }: Props) {
   const { slug } = await params;
 

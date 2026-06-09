@@ -171,8 +171,12 @@ const shareEvent = (event: any) => {
         const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días para archivar
         
         // 🌟 CONSTANTES PARA MOSTRAR INICIO Y FIN POR SEPARADO:
-        const fechaInicioFormateada = format(eventDate, "dd MMM yyyy - HH:mm");
-        const fechaFinFormateada = event.endDate ? format(new Date(event.endDate), "dd MMM yyyy - HH:mm") : null;
+        
+
+        const fechaInicioFormateada = format(new Date(event.date), "dd MMM yyyy - HH:mm");
+    const fechaFinFormateada = event.endDate ? format(new Date(event.endDate), "dd MMM yyyy - HH:mm") : null;
+
+  
 
         return (
           <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">

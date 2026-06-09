@@ -31,7 +31,7 @@ export default async function AdminPage() {
       activatedAt: true,
       deactivationReason: true,
       createdAt: true,
-      paymentAmount: true, // 🌟 SOLUCIÓN 1: Traemos el monto real de la base de datos
+      paymentAmount: true, // Traemos el monto real (Decimal) de la base de datos
       user: {
         select: {
           firstName: true,
@@ -45,14 +45,21 @@ export default async function AdminPage() {
     }
   });
 
- return (
+  // 🌟 AQUÍ ESTÁ LA LÍNEA QUE FALTABA: 
+  // Sanea el Decimal de Prisma convirtiéndolo a un número nativo antes de enviarlo al cliente
+  const sanitizedEvents = allEvents.map(event => ({
+    ...event,
+    paymentAmount: event.paymentAmount ? Number(event.paymentAmount.toString()) : 0
+  }));
+
+  return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl font-bold">Super Admin Panel</h1>
         <p className="text-gray-600 mt-2">Control total de eventos y pagos</p>
       </div>
 
-      {/* 🌟 Pasamos los eventos ya limpios y con sus números reales al Cliente */}
+      {/* Enviamos el arreglo saneado y con números reales */}
       <SuperAdminClient events={sanitizedEvents} />
     </div>
   );

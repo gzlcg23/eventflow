@@ -1,6 +1,6 @@
 // app/eventos/editar/[id]/page.tsx
 import { prisma } from "@/lib/prisma";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import EditEventForm from "./EditEventForm";
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +16,8 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Editar Evento</h1>
+      <h1 className="text-3xl font-bold mb-8 text-white">Editar Evento</h1>
+      {/* Pasamos el evento completo al formulario interactivo client-side */}
       <EditEventForm event={event} />
     </div>
   );

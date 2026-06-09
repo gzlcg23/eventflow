@@ -1,7 +1,7 @@
 // app/eventos/editar/[id]/EditEventForm.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface EditEventFormProps {
@@ -14,12 +14,18 @@ export default function EditEventForm({ event }: EditEventFormProps) {
   const [isPublic, setIsPublic] = useState(event.isPublic);
   const [error, setError] = useState("");
 
+  // 🛡️ Evaluar el estado del evento para aplicar las restricciones de negocio
+  const estaActivo = event.isActive || event.paymentStatus === "PAID";
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (estaActivo) return; // Protección extra en cliente
+
     setIsLoading(true);
     setError("");
 
     const formData = new FormData(e.currentTarget);
+    // Solo enviamos isPublic si no está bloqueado por la activación previa
     formData.append("isPublic", isPublic.toString());
 
     try {
@@ -33,11 +39,12 @@ export default function EditEventForm({ event }: EditEventFormProps) {
       if (data.success) {
         alert("Evento actualizado correctamente");
         router.push("/eventos");
+        router.refresh();
       } else {
         setError(data.error || "Error al actualizar");
       }
     } catch (err) {
-      setError("Error de conexión");
+      setError("Error de conexión con el servidor");
     } finally {
       setIsLoading(false);
     }
@@ -45,86 +52,136 @@ export default function EditEventForm({ event }: EditEventFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      
+      {/* 🌟 BANNERS INFORMATIVOS DE POLÍTICAS DE USO */}
+      {estaActivo ? (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl text-sm text-red-800">
+          <p className="font-semibold">🛡️ Evento Confirmado y Bloqueado</p>
+          <p className="text-xs text-red-700 mt-1">
+            Este evento ya se encuentra activo y pagado. No es posible modificar ningún parámetro por cuestiones de cotización y términos del servicio contratado.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl text-sm text-amber-800">
+          <p className="font-semibold">⚠️ Restricción de Cotización Activa</p>
+          <p className="text-xs text-amber-700 mt-1">
+            Las fechas, paquete y el tipo de privacidad están congelados para mantener la integridad de tu presupuesto inicial. Solo puedes editar los datos de información logística.
+          </p>
+        </div>
+      )}
+
+      {/* Muestra errores del backend en pantalla si ocurren */}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded-xl text-sm font-medium">
+          ❌ {error}
+        </div>
+      )}
+
+      {/* CAMPO: Nombre (Editable solo antes de pagar) */}
       <div>
         <label className="block text-sm font-medium mb-2">Nombre del Evento *</label>
-        <input name="name" defaultValue={event.name} required className="w-full px-4 py-3 border rounded-2xl" />
+        <input 
+          name="name" 
+          defaultValue={event.name} 
+          required 
+          disabled={estaActivo}
+          className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
+        />
       </div>
 
+      {/* CAMPO: Descripción (Editable solo antes de pagar) */}
       <div>
         <label className="block text-sm font-medium mb-2">Descripción</label>
-        <textarea name="description" defaultValue={event.description || ""} rows={4} className="w-full px-4 py-3 border rounded-2xl" />
+        <textarea 
+          name="description" 
+          defaultValue={event.description || ""} 
+          rows={4} 
+          disabled={estaActivo}
+          className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ❌ CAMPO: Fecha y Hora (INMUTABLE SIEMPRE EN EDICIÓN) */}
         <div>
-          <label className="block text-sm font-medium mb-2">Fecha y Hora *</label>
+          <label className="block text-sm font-medium mb-2 text-gray-400">Fecha y Hora de Inicio (Inmutable)</label>
           <input 
-            name="date" 
             type="datetime-local" 
-            defaultValue={
+            disabled={true} 
+            value={
               event.date 
                 ? new Date(event.date).toISOString().slice(0, 16) 
                 : ""
             } 
-            required 
-            className="w-full px-4 py-3 border rounded-2xl" 
+            className="w-full px-4 py-3 border rounded-2xl bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm" 
           />
         </div>
 
+        {/* CAMPO: Ubicación (Editable solo antes de pagar) */}
         <div>
           <label className="block text-sm font-medium mb-2">Ubicación</label>
-          <input name="location" defaultValue={event.location || ""} className="w-full px-4 py-3 border rounded-2xl" />
+          <input 
+            name="location" 
+            defaultValue={event.location || ""} 
+            disabled={estaActivo}
+            className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
+          />
         </div>
       </div>
 
+      {/* CAMPO: URL de Maps (Editable solo antes de pagar) */}
       <div>
         <label className="block text-sm font-medium mb-2">Link de Google Maps</label>
-        <input name="locationUrl" defaultValue={event.locationUrl || ""} type="url" className="w-full px-4 py-3 border rounded-2xl" />
+        <input 
+          name="locationUrl" 
+          defaultValue={event.locationUrl || ""} 
+          type="url" 
+          disabled={estaActivo}
+          className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
+        />
       </div>
 
-      {/* Tipo de Evento */}
-      <div className="bg-gray-50 border rounded-3xl p-6">
-        <label className="block text-sm font-medium mb-3">Tipo de Evento</label>
+      {/* ❌ SECCIÓN: Tipo de Evento y Paquetes (INMUTABLES EN EDICIÓN) */}
+      <div className="bg-gray-100 border rounded-3xl p-6 opacity-75">
+        <div className="flex justify-between items-center mb-4">
+          <label className="block text-sm font-medium text-gray-500">Configuración del Paquete e Integridad (Fijo)</label>
+          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-mono font-bold">{event.tierId}</span>
+        </div>
         
-        <div className="flex gap-6">
-          <label className="flex items-center gap-3 cursor-pointer">
+        <div className="flex gap-6 pointer-events-none">
+          <label className="flex items-center gap-3 cursor-not-allowed">
             <input 
               type="radio" 
-              name="isPublic" 
               checked={isPublic}
-              onChange={() => setIsPublic(true)}
-              className="w-5 h-5 accent-black"
+              readOnly
+              className="w-5 h-5 accent-gray-400"
             />
             <div>
-              <p className="font-medium">Público</p>
-              <p className="text-sm text-gray-500">Cualquiera puede registrarse</p>
+              <p className="font-medium text-gray-500">Público</p>
+              <p className="text-xs text-gray-400">Capacidad: {event.capacity || "Ilimitada"}</p>
             </div>
           </label>
 
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-not-allowed">
             <input 
               type="radio" 
-              name="isPublic" 
               checked={!isPublic}
-              onChange={() => setIsPublic(false)}
-              className="w-5 h-5 accent-black"
+              readOnly
+              className="w-5 h-5 accent-gray-400"
             />
             <div>
-              <p className="font-medium">Privado</p>
-              <p className="text-sm text-gray-500">Solo con código de acceso</p>
+              <p className="font-medium text-gray-500">Privado</p>
+              <p className="text-xs text-gray-400">Código de acceso vinculado</p>
             </div>
           </label>
         </div>
 
-        {!isPublic && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium mb-2">Código de Acceso</label>
-            <input 
-              name="accessCode" 
-              defaultValue={event.accessCode || ""} 
-              className="w-full px-4 py-3 border rounded-2xl uppercase tracking-widest" 
-              placeholder="EJEMPLO2026"
-            />
+        {!isPublic && event.accessCode && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <label className="block text-xs font-medium text-gray-400 mb-1">Código de Acceso Requerido</label>
+            <p className="text-sm font-mono tracking-widest text-gray-600 bg-gray-200 inline-block px-3 py-1 rounded">
+              {event.accessCode}
+            </p>
           </div>
         )}
       </div>
@@ -136,16 +193,19 @@ export default function EditEventForm({ event }: EditEventFormProps) {
           onClick={() => router.back()}
           className="flex-1 border border-gray-300 py-4 rounded-2xl font-medium hover:bg-gray-50 transition"
         >
-          Cancelar
+          {estaActivo ? "Volver" : "Cancelar"}
         </button>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex-1 bg-black text-white py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 disabled:opacity-70"
-        >
-          {isLoading ? "Guardando cambios..." : "Guardar Cambios"}
-        </button>
+        {/* Ocultamos por completo el botón de guardar si el evento está activo */}
+        {!estaActivo && (
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 bg-black text-white py-4 rounded-2xl text-lg font-medium hover:bg-gray-800 disabled:opacity-70 transition"
+          >
+            {isLoading ? "Guardando cambios..." : "Guardar Cambios"}
+          </button>
+        )}
       </div>
     </form>
   );

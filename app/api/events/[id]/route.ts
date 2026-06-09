@@ -41,13 +41,27 @@ export async function PUT(
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
 
-    // 🛡️ REGLA DE NEGOCIO 1: CANDADO TOTAL POST-PAGO
-    if (event.isActive || event.paymentStatus === "PAID") {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Este evento ya se encuentra activo y pagado. No se permite la edición de ningún elemento por políticas de términos y condiciones." 
-      }, { status: 400 });
-    }
+    // 3. 🛡️ CANDADO DE SEGURIDAD POST-PAGO / ACTIVACIÓN
+if (event.isActive || event.paymentStatus === "PAID") {
+  const modificoFechaInicio = event.date.getTime() !== new Date(date).getTime();
+  const modificoFechaFin = (event.endDate?.getTime() !== (endDateRaw ? new Date(endDateRaw).getTime() : undefined));
+  const modificoPaquete = event.tierId !== tierId || event.capacity !== capacity;
+
+  if (modificoFechaInicio || modificoFechaFin || modificoPaquete) {
+    return NextResponse.json({ 
+      success: false, 
+      error: "Este evento ya se encuentra activo o pagado. No es posible alterar las fechas contratadas ni la capacidad." 
+    }, { status: 400 });
+  }
+}
+
+// Validación cruzada preventiva de fechas
+if (endDateRaw && new Date(endDateRaw) <= new Date(date)) {
+  return NextResponse.json({ 
+    success: false, 
+    error: "La fecha de finalización debe ser estrictamente posterior a la fecha de inicio." 
+  }, { status: 400 });
+}
 
     // 2. Extraer datos de FormData para evento pendiente
     const formData = await request.formData();

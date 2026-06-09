@@ -239,8 +239,12 @@ const shareEvent = (event: any) => {
               {/* Editar y Eliminar solo si la fecha NO ha pasado */}
               {!isPast && (
                 <>
-                  <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
-                    <Edit3 size={20} />
+                  <Link 
+                    href={`/eventos/editar/${event.id}`} 
+                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded-xl transition" 
+                    title="Ver Resumen de Configuración"
+                  >
+                    <Eye size={20} />
                   </Link>
 
                   <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">

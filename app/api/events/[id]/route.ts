@@ -5,6 +5,16 @@ import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache"; 
 import { createAuditLog } from "@/lib/audit"; 
 
+// Función auxiliar para desinfectar strings contra XSS
+function sanitizeText(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -17,7 +27,7 @@ export async function PUT(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 1. Validar propiedad del evento e incluir al usuario
+    // 1. Validar propiedad del evento e incluir al usuario dueño
     const event = await prisma.event.findUnique({
       where: { id },
       include: { user: true }
@@ -27,18 +37,20 @@ export async function PUT(
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    // Validar pertenencia
+    // Validar pertenencia del recurso
     if (event.user.clerkId !== clerkUser.id) {
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
 
-    // 2. Extraer datos de FormData
+    // 2. Extraer datos de FormData (Soportando los nuevos campos modulares 🌟)
     const formData = await request.formData();
     const rawEntries = Object.fromEntries(formData.entries());
 
     const name = rawEntries.name as string;
     const description = rawEntries.description as string;
     const date = rawEntries.date as string;
+    const endDateRaw = rawEntries.endDate as string; // 🌟 Nuevo
+    const tierId = rawEntries.tierId as string;     // 🌟 Nuevo
     const location = rawEntries.location as string;
     const locationUrl = rawEntries.locationUrl as string;
     const accessCode = rawEntries.accessCode as string;
@@ -47,28 +59,51 @@ export async function PUT(
     const isPublic = rawEntries.isPublic === "true" || rawEntries.isPublic === true;
 
     if (!name || !date) {
-      return NextResponse.json({ error: "Nombre y fecha son obligatorios" }, { status: 400 });
+      return NextResponse.json({ error: "Nombre y fecha de inicio son obligatorios" }, { status: 400 });
     }
 
     const capacity = capacityRaw && capacityRaw.trim() !== "" ? parseInt(capacityRaw, 10) : null;
     const finalAccessCode = !isPublic && accessCode ? accessCode.trim().toUpperCase() : null;
+    const endDate = endDateRaw && endDateRaw.trim() !== "" ? new Date(endDateRaw) : null;
 
-    // 3. Actualizar en Base de Datos
+    // 3. 🛡️ CANDADO DE SEGURIDAD POST-PAGO / ACTIVACIÓN
+    // Si el evento ya está activo o pagado, bloqueamos cualquier cambio que altere la cotización
+    if (event.isActive || event.paymentStatus === "PAID") {
+      const modificoFechaInicio = event.date.getTime() !== new Date(date).getTime();
+      const modificoFechaFin = (event.endDate?.getTime() !== (endDate ? endDate.getTime() : undefined));
+      const modificoPaquete = event.tierId !== tierId || event.capacity !== capacity;
+
+      if (modificoFechaInicio || modificoFechaFin || modificoPaquete) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Este evento ya se encuentra activo o pagado. Por políticas de términos y condiciones, no es posible alterar las fechas contratadas ni la capacidad de asistentes." 
+        }, { status: 400 });
+      }
+    }
+
+    // Validación cruzada de fechas si mandan un término menor al inicio
+    if (endDate && endDate <= new Date(date)) {
+      return NextResponse.json({ success: false, error: "La fecha de finalización debe ser estrictamente posterior a la fecha de inicio." }, { status: 400 });
+    }
+
+    // 4. Actualizar en Base de Datos (Con protección XSS y guardado de nuevos campos)
     const updatedEvent = await prisma.event.update({
       where: { id },
       data: {
-        name: name.trim(),
-        description: description?.trim() || null,
+        name: sanitizeText(name.trim()),
+        description: description ? sanitizeText(description.trim()) : null,
         date: new Date(date),
-        location: location?.trim() || null,
-        locationUrl: locationUrl?.trim() || null,
+        endDate: endDate, // 🌟 Guardado modular
+        tierId: tierId || event.tierId, // 🌟 Mantiene el actual si no viene en el formulario
+        location: location ? sanitizeText(location.trim()) : null,
+        locationUrl: locationUrl ? sanitizeText(locationUrl.trim()) : null,
         isPublic: isPublic, 
         accessCode: finalAccessCode,
-        capacity: capacity !== null && !isNaN(capacity) ? capacity : null,
+        capacity: capacity !== null && !isNaN(capacity) ? capacity : event.capacity,
       },
     });
 
-    // 4. Escribir el Log de Auditoría
+    // 5. Escribir el Log de Auditoría
     await createAuditLog({
       action: "EVENT_UPDATE",
       entity: "EVENT",
@@ -76,11 +111,12 @@ export async function PUT(
       userId: event.user.id,
       userEmail: event.user.email,
       ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-      details: `Editó el evento "${updatedEvent.name}". Estado actual -> Público: ${updatedEvent.isPublic}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
+      details: `Editó el evento "${updatedEvent.name}". Plan: ${updatedEvent.tierId}, Capacidad: ${updatedEvent.capacity || "Ilimitada"}`
     });
 
     revalidatePath("/eventos");
     revalidatePath(`/eventos/editar/${id}`);
+    revalidatePath("/dashboard");
 
     return NextResponse.json({ success: true, event: updatedEvent });
 
@@ -134,12 +170,10 @@ export async function DELETE(
 
     // 4. 🌟 TRANSACCIÓN EN CASCADA: Limpiamos los hijos primero y luego el padre de forma atómica
     await prisma.$transaction(async (tx) => {
-      // A. Borrar todos los asistentes vinculados al evento primero para remover la restricción de FK
       await tx.attendee.deleteMany({
         where: { eventId: id }
       });
 
-      // B. Ahora sí, eliminamos el evento de forma segura
       await tx.event.delete({
         where: { id }
       });
@@ -147,6 +181,7 @@ export async function DELETE(
 
     // 5. Revalidar rutas
     revalidatePath("/eventos");
+    revalidatePath("/dashboard");
 
     return NextResponse.json({ success: true });
 

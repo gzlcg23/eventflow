@@ -159,15 +159,56 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    /// 6. Generación segura de número de evento (Correlativo Basado en Conteo)
+    // ==================== 6. GENERACIÓN INTACTA Y SEGURA DE FOLIO ====================
     const year = new Date().getFullYear();
-    
-    // Obtenemos el total de eventos históricos en el sistema para generar el siguiente folio
-    const totalEventsInSystem = await prisma.event.count();
-    const nextSequence = 1000 + totalEventsInSystem + 1;
-    
-    // Construimos el folio usando una variable con nombre único e inequívoco
+    let nextSequence = 1001;
+
+    // Buscamos el último evento creado de forma histórica (sin importar si se borraron intermedios)
+    const lastEvent = await prisma.event.findFirst({
+      orderBy: { eventNumber: 'desc' },
+      select: { eventNumber: true }
+    });
+
+    if (lastEvent && lastEvent.eventNumber) {
+      // Extraemos los últimos 4 dígitos numéricos del folio (ej: EV-2026-1005 -> 1005)
+      const lastNumberParts = lastEvent.eventNumber.split('-');
+      const lastCount = parseInt(lastNumberParts[lastNumberParts.length - 1], 10);
+      if (!isNaN(lastCount)) {
+        nextSequence = lastCount + 1;
+      }
+    }
+
     const finalEventNumber = `EV-${year}-${String(nextSequence).padStart(4, '0')}`;
+
+    // ==================== NUEVO: VALIDACIÓN Y RE-CÁLCULO DE COSTOS EN BACKEND ====================
+    // Definimos los precios base reales del negocio
+    const PRECIOS_BASE: Record<string, number> = {
+      MICRO: 1500,  // Ajustado a tu nuevo precio base por defecto
+      MEDIUM: 3500,
+      LARGE: 7000
+    };
+
+    const costoBase = PRECIOS_BASE[tierId] || 1500;
+    let montoCalculado = costoBase;
+
+    // Calcular días si es un evento multidía
+    if (endDate) {
+      const inicio = new Date(date);
+      const fin = new Date(endDate);
+      
+      // Diferencia en milisegundos convertida a días completos
+      const diferenciaTiempo = fin.getTime() - inicio.getTime();
+      const diasTotales = Math.ceil(diferenciaTiempo / (1000 * 60 * 60 * 24));
+
+      if (diasTotales > 1) {
+        const diasExtra = diasTotales - 1;
+        const porcentajeExtra = 0.40; // 40% más por cada día extra
+        montoCalculado = costoBase + (costoBase * porcentajeExtra * diasExtra);
+      }
+    }
+
+    // Redondeamos para evitar decimales extraños en las pasarelas o depósitos
+    const finalPaymentAmount = Math.round(montoCalculado);
 
     // 7. Generación segura de Slug único
     let slug = sanitizedName
@@ -184,25 +225,25 @@ export async function POST(req: Request) {
       slugCounter++;
     }
 
-    // 8. Inserción Segura en Neon (Inyectando la configuración modular 🌟)
+    // ==================== 8. INSERCIÓN SEGURA EN NEON ====================
     const event = await prisma.event.create({
       data: {
         name: sanitizedName,
         description: sanitizedDescription,
         date: date,
-        endDate: endDate || null, // Guardamos la fecha de fin si es multidía
+        endDate: endDate || null,
         location: sanitizedLocation,
         locationUrl: sanitizedLocationUrl,
         isPublic,
         accessCode: sanitizedAccessCode,
         capacity: capacity, 
-        tierId: tierId, // Registramos qué plan compró ("MICRO", "MEDIUM", "LARGE")
-        isActive: false, // Espera que el administrador valide su depósito
+        tierId: tierId,
+        isActive: false, 
         paymentStatus: "PENDING",
-        paymentAmount: paymentAmount, // El precio exacto calculado con multiplicador
+        paymentAmount: finalPaymentAmount, // 🌟 Guardamos el monto recalculado y protegido por el backend
         slug: finalSlug,
         userId: user.id,
-        eventNumber: finalEventNumber, // 🌟 Pasamos la variable limpia y mapeada correctamente
+        eventNumber: finalEventNumber, // 🌟 Folio correlativo real e imposible de duplicar
       },
     });
 

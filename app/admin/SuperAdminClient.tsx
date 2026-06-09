@@ -213,11 +213,11 @@ const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => {
   return acumulado + costoEvento;
 }, 0);
 
-// Desglosamos el IVA contenido en los ingresos reales calculados
-// --- CÁLCULOS FINANCIEROS BIEN OPERADOS (DESDE LA BASE DE DATOS) ---
-// Ahora solo sumamos el campo directo que guardó la base de datos. ¡Sin fórmulas raras!
-// --- CÁLCULOS FINANCIEROS COBRADOS DE LA BASE DE DATOS (NOMBRES ÚNICOS) ---
-const totalIngresosRealesSaaS = activeEvents.reduce((acumulado, evento) => acumulado + (evento.totalPaid || 0), 0);
+// --- CÁLCULOS FINANCIEROS COBRADOS DE LA BASE DE DATOS (COLUMNA CORRECTA) ---
+// Cambiamos evento.totalPaid por el campo real: evento.paymentAmount
+const totalIngresosRealesSaaS = activeEvents.reduce((acumulado, evento) => {
+  return acumulado + (Number(evento.paymentAmount) || 0);
+}, 0);
 
 // Desglosamos el IVA contenido en los ingresos reales cobrados
 const gananciaSubtotalReal = totalIngresosRealesSaaS / 1.16;
@@ -276,7 +276,6 @@ autoTable(doc, {
     if (data.row.index > 5) {
       data.cell.styles.fillColor = [252, 253, 253];
       if (data.column.index === 1) {
-        // Asegúrate de que successColor esté definido arriba en tu archivo, si no, usa un array rgb: [34, 197, 94]
         data.cell.styles.textColor = typeof successColor !== 'undefined' ? successColor : [34, 197, 94];
       }
     }

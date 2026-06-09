@@ -167,7 +167,7 @@ export async function POST(req: Request) {
 
     while (exists) {
       eventNumber = `EV-${year}-${String(counter).padStart(4, '0')}`;
-      exists = await prisma.prisma.event.findUnique({
+      exists = await prisma.event.findUnique({
         where: { eventNumber }
       }) !== null;
       counter++;

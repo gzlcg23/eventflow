@@ -241,7 +241,7 @@ const shareEvent = (event: any) => {
                 <>
                   <Link 
                     href={`/eventos/editar/${event.id}`} 
-                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded-xl transition" 
+                    className="flex items-center justify-center w-10 h-10 text-zinc-700 hover:bg-zinc-200 rounded-xl transition" 
                     title="Ver Resumen de Configuración"
                   >
                     <Eye size={20} />

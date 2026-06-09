@@ -159,26 +159,15 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // 6. Generación segura de número de evento
+    /// 6. Generación segura de número de evento (Correlativo Basado en Conteo)
     const year = new Date().getFullYear();
-    let eventNumber = ""; // 🌟 Esta es la variable global del scope de la función
-    let counter = 1000;
-    let exists = true;
-
-    while (exists) {
-      // Asignamos directamente a la variable externa, SIN usar 'let' o 'const' aquí adentro
-      eventNumber = `EV-${year}-${String(counter).padStart(4, '0')}`;
-      
-      const duplicate = await prisma.event.findUnique({
-        where: { eventNumber: eventNumber }
-      });
-      
-      if (!duplicate) {
-        exists = false; // Rompemos el ciclo si el folio está libre
-      } else {
-        counter++; // Si ya existe, sumamos uno y volvemos a intentar
-      }
-    }
+    
+    // Obtenemos el total de eventos históricos en el sistema para generar el siguiente folio
+    const totalEventsInSystem = await prisma.event.count();
+    const nextSequence = 1000 + totalEventsInSystem + 1;
+    
+    // Construimos el folio usando una variable con nombre único e inequívoco
+    const finalEventNumber = `EV-${year}-${String(nextSequence).padStart(4, '0')}`;
 
     // 7. Generación segura de Slug único
     let slug = sanitizedName
@@ -213,6 +202,7 @@ export async function POST(req: Request) {
         paymentAmount: paymentAmount, // El precio exacto calculado con multiplicador
         slug: finalSlug,
         userId: user.id,
+        eventNumber: finalEventNumber, // 🌟 Pasamos la variable limpia y mapeada correctamente
       },
     });
 

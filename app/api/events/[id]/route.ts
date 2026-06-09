@@ -41,29 +41,7 @@ export async function PUT(
       return NextResponse.json({ error: "No tienes permiso para editar este evento" }, { status: 403 });
     }
 
-    // 3. 🛡️ CANDADO DE SEGURIDAD POST-PAGO / ACTIVACIÓN
-if (event.isActive || event.paymentStatus === "PAID") {
-  const modificoFechaInicio = event.date.getTime() !== new Date(date).getTime();
-  const modificoFechaFin = (event.endDate?.getTime() !== (endDateRaw ? new Date(endDateRaw).getTime() : undefined));
-  const modificoPaquete = event.tierId !== tierId || event.capacity !== capacity;
-
-  if (modificoFechaInicio || modificoFechaFin || modificoPaquete) {
-    return NextResponse.json({ 
-      success: false, 
-      error: "Este evento ya se encuentra activo o pagado. No es posible alterar las fechas contratadas ni la capacidad." 
-    }, { status: 400 });
-  }
-}
-
-// Validación cruzada preventiva de fechas
-if (endDateRaw && new Date(endDateRaw) <= new Date(date)) {
-  return NextResponse.json({ 
-    success: false, 
-    error: "La fecha de finalización debe ser estrictamente posterior a la fecha de inicio." 
-  }, { status: 400 });
-}
-
-    // 2. Extraer datos de FormData para evento pendiente
+    // 2. Extraer datos de FormData para validación
     const formData = await request.formData();
     const rawEntries = Object.fromEntries(formData.entries());
 
@@ -71,12 +49,42 @@ if (endDateRaw && new Date(endDateRaw) <= new Date(date)) {
     const description = rawEntries.description as string;
     const location = rawEntries.location as string;
     const locationUrl = rawEntries.locationUrl as string;
+    
+    // Extraemos las variables de tiempo y paquete para el validador del candado
+    const dateInput = rawEntries.date as string;
+    const endDateForm = rawEntries.endDate as string | null;
+    const tierId = rawEntries.tierId as string;
+    const capacity = rawEntries.capacity ? parseInt(rawEntries.capacity as string, 10) : undefined;
 
     if (!name || name.trim().length < 3) {
       return NextResponse.json({ error: "El nombre del evento es obligatorio y debe tener al menos 3 caracteres" }, { status: 400 });
     }
 
-    // 3. Actualizar UNICAMENTE campos permitidos en Base de Datos
+    // 🛡️ REGLA DE NEGOCIO: CANDADO INTELIGENTE POST-PAGO / ACTIVACIÓN
+    // Si está activo o pagado, permitimos cambiar aspectos estéticos (nombre, descripción, mapa) 
+    // pero bloqueamos en seco si intentan alterar fechas, tiers o capacidad contratada.
+    if (event.isActive || event.paymentStatus === "PAID") {
+      const modificoFechaInicio = dateInput ? event.date.getTime() !== new Date(dateInput).getTime() : false;
+      const modificoFechaFin = event.endDate?.getTime() !== (endDateForm ? new Date(endDateForm).getTime() : undefined);
+      const modificoPaquete = (tierId && event.tierId !== tierId) || (capacity !== undefined && event.capacity !== capacity);
+
+      if (modificoFechaInicio || modificoFechaFin || modificoPaquete) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Este evento ya se encuentra activo o pagado. No es posible alterar las fechas contratadas, la capacidad ni el paquete comercial." 
+        }, { status: 400 });
+      }
+    }
+
+    // Validación cruzada preventiva de fechas
+    if (dateInput && endDateForm && new Date(endDateForm) <= new Date(dateInput)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "La fecha de finalización debe ser estrictamente posterior a la fecha de inicio." 
+      }, { status: 400 });
+    }
+
+    // 3. Actualizar ÚNICAMENTE campos permitidos en Base de Datos
     // Ignoramos fechas, capacidad y tiers para congelar la cotización original
     const updatedEvent = await prisma.event.update({
       where: { id },

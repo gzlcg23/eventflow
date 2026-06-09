@@ -214,22 +214,25 @@ const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => {
 }, 0);
 
 // Desglosamos el IVA contenido en los ingresos reales calculados
+// --- CÁLCULOS FINANCIEROS BIEN OPERADOS (DESDE LA BASE DE DATOS) ---
+// Ahora solo sumamos el campo directo que guardó la base de datos. ¡Sin fórmulas raras!
+const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => acumulado + (evento.totalPaid || 0), 0);
+
+// Desglosamos el IVA contenido en los ingresos reales cobrados
 const gananciaSubtotal = totalIngresosSaaS / 1.16;
 const ivaContenido = totalIngresosSaaS - gananciaSubtotal;
 
 // Costos fijos operativos de infraestructura
 const domainCost = 450;
 const serverCost = 200;
-
-// El total de costos fijos que disminuyen la base distribuible
 const totalCostsFijos = domainCost + serverCost;
 
-// Ganancia Neta Real Distribuible = Subtotal neto - Costos fijos operativos
+// Ganancia Neta Real Distribuible
 const netProfit = gananciaSubtotal - totalCostsFijos;
 
-// Reparto de dividendos sobre la utilidad neta real
-const partner1Share = netProfit * 0.40;   // Socio 1 - 40%
-const partner2Share = netProfit * 0.60;   // Socio 2 - 60%
+// Reparto de dividendos exacto
+const partner1Share = netProfit * 0.40;
+const partner2Share = netProfit * 0.60;
 
 // --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
 doc.setFont("helvetica", "bold");

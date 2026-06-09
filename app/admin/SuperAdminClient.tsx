@@ -89,7 +89,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   // ==================== 🌟 SISTEMA FINANCIERO UNIFICADO DE VERDAD ====================
   const activeEvents = filteredEvents.filter(e => e.isActive);
 
-  // Suma e igualación segura del Decimal de Prisma
+  // Extrae y suma correctamente el valor numérico de paymentAmount desde la base de datos
   const totalIncomeReal = useMemo(() => {
     return activeEvents.reduce((acumulado, evento) => {
       const monto = evento.paymentAmount 
@@ -303,7 +303,7 @@ autoTable(doc, {
       `${event.user.firstName || ''} ${event.user.lastName || ''}`.trim() || 'Sin nombre',
       format(new Date(event.date), "dd/MM/yyyy"),
       event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy") : '—',
-      event.isActive ? `$${COSTO_POR_EVENTO.toLocaleString('es-MX')}` : '—',
+      event.paymentAmount ? `$${Number(event.paymentAmount.toString()).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—',
       event.deactivationReason || '—'
     ]);
 
@@ -514,8 +514,9 @@ autoTable(doc, {
           </div>
           <div>
             <p className="text-emerald-100 text-sm">Ingreso Total Real</p>
-            {/* 🌟 MUESTRA EL REDUCE REAL DE TU BASE DE DATOS EN LA CARD VERDE */}
-            <p className="text-5xl font-bold mt-2">${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+            <p className="text-5xl font-bold mt-2">
+              ${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
           <div>
             <p className="text-emerald-200 text-sm">Costo por Evento</p>

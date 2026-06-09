@@ -65,7 +65,7 @@ export default function EditEventForm({ event }: EditEventFormProps) {
         <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl text-sm text-amber-800">
           <p className="font-semibold">⚠️ Restricción de Cotización Activa</p>
           <p className="text-xs text-amber-700 mt-1">
-            Las fechas, paquete y el tipo de privacidad están congelados para mantener la integridad de tu presupuesto inicial. Solo puedes editar los datos de información logística.
+            Las fechas, numero de registros y el tipo de privacidad del evento están congelados para mantener la integridad de tu presupuesto inicial. Solo puedes editar los datos de información logística.
           </p>
         </div>
       )}
@@ -101,8 +101,9 @@ export default function EditEventForm({ event }: EditEventFormProps) {
         />
       </div>
 
+      {/* 🌟 SECCIÓN DE FECHAS EN DOS COLUMNAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* ❌ CAMPO: Fecha y Hora (INMUTABLE SIEMPRE EN EDICIÓN) */}
+        {/* ❌ CAMPO: Fecha y Hora de Inicio (INMUTABLE) */}
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-400">Fecha y Hora de Inicio (Inmutable)</label>
           <input 
@@ -117,6 +118,24 @@ export default function EditEventForm({ event }: EditEventFormProps) {
           />
         </div>
 
+        {/* ❌ CAMPO: Fecha y Hora de Finalización (INMUTABLE) */}
+        <div>
+          <label className="block text-sm font-medium mb-2 text-gray-400">Fecha y Hora de Finalización (Inmutable)</label>
+          <input 
+            type="datetime-local" 
+            disabled={true} 
+            value={
+              event.endDate 
+                ? new Date(event.endDate).toISOString().slice(0, 16) 
+                : ""
+            } 
+            className="w-full px-4 py-3 border rounded-2xl bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm" 
+          />
+        </div>
+      </div>
+
+      {/* SECCIÓN DE DATOS DE UBICACIÓN */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* CAMPO: Ubicación (Editable solo antes de pagar) */}
         <div>
           <label className="block text-sm font-medium mb-2">Ubicación</label>
@@ -127,18 +146,18 @@ export default function EditEventForm({ event }: EditEventFormProps) {
             className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
           />
         </div>
-      </div>
 
-      {/* CAMPO: URL de Maps (Editable solo antes de pagar) */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Link de Google Maps</label>
-        <input 
-          name="locationUrl" 
-          defaultValue={event.locationUrl || ""} 
-          type="url" 
-          disabled={estaActivo}
-          className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
-        />
+        {/* CAMPO: URL de Maps (Editable solo antes de pagar) */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Link de Google Maps</label>
+          <input 
+            name="locationUrl" 
+            defaultValue={event.locationUrl || ""} 
+            type="url" 
+            disabled={estaActivo}
+            className="w-full px-4 py-3 border rounded-2xl bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" 
+          />
+        </div>
       </div>
 
       {/* ❌ SECCIÓN: Tipo de Evento y Paquetes (INMUTABLES EN EDICIÓN) */}

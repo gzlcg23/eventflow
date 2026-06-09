@@ -28,17 +28,20 @@ const crearEventoSchema = z.object({
       }
       return val;
     },
-    z.coerce.date({ message: "La fecha y hora ingresadas no son válidas" })
+    z.coerce.date({ message: "La fecha y hora de inicio ingresadas no son válidas" })
   ).refine(
     (val) => {
-      // Damos un margen de tolerancia de 2 horas hacia atrás por si el servidor UTC difiere del huso horario local
       const limiteTolerante = new Date();
       limiteTolerante.setHours(limiteTolerante.getHours() - 2);
       return val.getTime() > limiteTolerante.getTime();
     },
-    {
-      message: "La fecha del evento no es válida o ya ha pasado.",
-    }
+    { message: "La fecha del evento no es válida o ya ha pasado." }
+  ),
+
+  // 🌟 NUEVO: Validación de Fecha de Finalización para eventos Multidía
+  endDate: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.date({ message: "La fecha de finalización ingresada no es válida" }).optional().nullable()
   ),
 
   location: z.string()
@@ -66,15 +69,19 @@ const crearEventoSchema = z.object({
     })
     .or(z.literal("")),
 
-  // 🌟 Coercición para capacity: maneja strings vacíos y asegura números enteros positivos
-  capacity: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.coerce.number()
-      .int("La capacidad debe ser un número entero")
-      .positive("La capacidad debe ser mayor a cero")
-      .optional()
-      .nullable()
-  ),
+  // 🌟 Forzado de capacidad desde el Tier seleccionado en UI
+  capacity: z.coerce.number()
+    .int("La capacidad debe ser un número entero")
+    .positive("La capacidad debe ser mayor a cero"),
+
+  // 🌟 NUEVO: Validación del paquete contratado
+  tierId: z.enum(["MICRO", "MEDIUM", "LARGE"], {
+    errorMap: () => ({ message: "El paquete seleccionado no es válido" })
+  }),
+
+  // 🌟 NUEVO: Monto calculado dinámicamente desde el cliente
+  paymentAmount: z.coerce.number()
+    .nonnegative("El monto de pago no puede ser negativo")
 });
 
 // Función auxiliar para limpiar texto y prevenir XSS
@@ -109,12 +116,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: errorMessages }, { status: 400 });
     }
 
-    // 4. Extraer datos limpios (¡Con 'capacity' incluido! 🌟)
-    const { name, description, date, location, locationUrl, isPublic, capacity } = result.data;
+    // 4. Extraer datos limpios (¡Con los campos modulares agregados! 🌟)
+    const { 
+      name, 
+      description, 
+      date, 
+      endDate, 
+      location, 
+      locationUrl, 
+      isPublic, 
+      capacity, 
+      tierId, 
+      paymentAmount 
+    } = result.data;
+    
     let accessCode = result.data.accessCode;
 
     if (!isPublic && !accessCode) {
       return NextResponse.json({ success: false, error: "Los eventos privados requieren obligatoriamente un código de acceso." }, { status: 400 });
+    }
+
+    // Validación cruzada para fechas multidía
+    if (endDate && endDate <= date) {
+      return NextResponse.json({ success: false, error: "La fecha de finalización debe ser estrictamente posterior a la fecha de inicio." }, { status: 400 });
     }
 
     const sanitizedName = sanitizeText(name);
@@ -143,7 +167,7 @@ export async function POST(req: Request) {
 
     while (exists) {
       eventNumber = `EV-${year}-${String(counter).padStart(4, '0')}`;
-      exists = await prisma.event.findUnique({
+      exists = await prisma.prisma.event.findUnique({
         where: { eventNumber }
       }) !== null;
       counter++;
@@ -164,20 +188,22 @@ export async function POST(req: Request) {
       slugCounter++;
     }
 
-    // 8. Inserción Segura en la Base de Datos con Prisma (Guardando 'capacity' 🌟)
+    // 8. Inserción Segura en Neon (Inyectando la configuración modular 🌟)
     const event = await prisma.event.create({
       data: {
         name: sanitizedName,
         description: sanitizedDescription,
         date: date,
+        endDate: endDate || null, // Guardamos la fecha de fin si es multidía
         location: sanitizedLocation,
         locationUrl: sanitizedLocationUrl,
         isPublic,
         accessCode: sanitizedAccessCode,
-        capacity: capacity || null, 
-        eventNumber,
-        isActive: false,
+        capacity: capacity, 
+        tierId: tierId, // Registramos qué plan compró ("MICRO", "MEDIUM", "LARGE")
+        isActive: false, // Espera que el administrador valide su depósito
         paymentStatus: "PENDING",
+        paymentAmount: paymentAmount, // El precio exacto calculado con multiplicador
         slug: finalSlug,
         userId: user.id,
       },

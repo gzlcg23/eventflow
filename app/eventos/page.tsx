@@ -298,10 +298,21 @@ const shareEvent = (event: any) => {
             </div>
           </div>
 
-          <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-          <p className="text-sm text-gray-400">
-            {format(new Date(event.date), "dd MMM yyyy - HH:mm")}
-          </p>
+         <p className="text-gray-500 text-sm mb-4">{event.location}</p>
+
+<div className="space-y-1">
+  {/* Fecha de Inicio */}
+  <p className="text-sm text-gray-400">
+    📅 Inicio: {fechaInicioFormateada}
+  </p>
+
+  {/* Fecha de Fin (Solo si existe en la base de datos) */}
+  {fechaFinFormateada && (
+    <p className="text-sm text-gray-400">
+      🏁 Fin: {fechaFinFormateada}
+    </p>
+  )}
+</div>
 
           <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
             {/* Solo Editar y Eliminar para inactivos/finalizados */}

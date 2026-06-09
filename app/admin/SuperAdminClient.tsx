@@ -216,23 +216,24 @@ const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => {
 // Desglosamos el IVA contenido en los ingresos reales calculados
 // --- CÁLCULOS FINANCIEROS BIEN OPERADOS (DESDE LA BASE DE DATOS) ---
 // Ahora solo sumamos el campo directo que guardó la base de datos. ¡Sin fórmulas raras!
-const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => acumulado + (evento.totalPaid || 0), 0);
+// --- CÁLCULOS FINANCIEROS COBRADOS DE LA BASE DE DATOS (NOMBRES ÚNICOS) ---
+const totalIngresosRealesSaaS = activeEvents.reduce((acumulado, evento) => acumulado + (evento.totalPaid || 0), 0);
 
 // Desglosamos el IVA contenido en los ingresos reales cobrados
-const gananciaSubtotal = totalIngresosSaaS / 1.16;
-const ivaContenido = totalIngresosSaaS - gananciaSubtotal;
+const gananciaSubtotalReal = totalIngresosRealesSaaS / 1.16;
+const ivaContenidoReal = totalIngresosRealesSaaS - gananciaSubtotalReal;
 
 // Costos fijos operativos de infraestructura
-const domainCost = 450;
-const serverCost = 200;
-const totalCostsFijos = domainCost + serverCost;
+const domainCostReal = 450;
+const serverCostReal = 200;
+const totalCostsFijosReal = domainCostReal + serverCostReal;
 
 // Ganancia Neta Real Distribuible
-const netProfit = gananciaSubtotal - totalCostsFijos;
+const netProfitReal = gananciaSubtotalReal - totalCostsFijosReal;
 
 // Reparto de dividendos exacto
-const partner1Share = netProfit * 0.40;
-const partner2Share = netProfit * 0.60;
+const partner1ShareReal = netProfitReal * 0.40;
+const partner2ShareReal = netProfitReal * 0.60;
 
 // --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
 doc.setFont("helvetica", "bold");
@@ -241,14 +242,14 @@ doc.setTextColor(0, 0, 0);
 doc.text("02. ESTADO DE RESULTADOS & PARTICIPACIÓN", 16, 82);
 
 const financialRows = [
-  ['Total Ingresos Brutos (Caja Real)', `$${totalIngresosSaaS.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['- Desglose de Impuesto Trasladado (IVA 16%)', `$${ivaContenido.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['Subtotal Neto Operativo (Base)', `$${gananciaSubtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['- Costos fijos operativos (Dominio)', `$${domainCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['- Costos fijos operativos (Infraestructura / Servidor)', `$${serverCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['GANANCIA NETA DISTRIBUIBLE', `$${netProfit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['Asignación Socio 1 (Distribución 40%)', `$${partner1Share.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-  ['Asignación Socio 2 (Distribución 60%)', `$${partner2Share.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]
+  ['Total Ingresos Brutos (Caja Real)', `$${totalIngresosRealesSaaS.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Desglose de Impuesto Trasladado (IVA 16%)', `$${ivaContenidoReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Subtotal Neto Operativo (Base)', `$${gananciaSubtotalReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Costos fijos operativos (Dominio)', `$${domainCostReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Costos fijos operativos (Infraestructura / Servidor)', `$${serverCostReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['GANANCIA NETA DISTRIBUIBLE', `$${netProfitReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Asignación Socio 1 (Distribución 40%)', `$${partner1ShareReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Asignación Socio 2 (Distribución 60%)', `$${partner2ShareReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]
 ];
 
 autoTable(doc, {
@@ -275,7 +276,8 @@ autoTable(doc, {
     if (data.row.index > 5) {
       data.cell.styles.fillColor = [252, 253, 253];
       if (data.column.index === 1) {
-        data.cell.styles.textColor = successColor;
+        // Asegúrate de que successColor esté definido arriba en tu archivo, si no, usa un array rgb: [34, 197, 94]
+        data.cell.styles.textColor = typeof successColor !== 'undefined' ? successColor : [34, 197, 94];
       }
     }
   }

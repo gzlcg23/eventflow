@@ -281,55 +281,66 @@ const shareEvent = (event: any) => {
              
 
           {/* Eventos Finalizados / Inactivos */}
-          {/* Eventos Inactivos / Finalizados */}
+ {/* Eventos Inactivos / Finalizados */}
 {pastEvents.length > 0 && (
   <div>
     <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Inactivos ({pastEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
-      {pastEvents.map((event) => (
-        <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-semibold text-xl mb-1 text-gray-400 cursor-default">
-                {event.name}
-              </h3>
-              <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
+      
+      {/* 🌟 1. Cambiamos el inicio del map abriendo llaves { */}
+      {pastEvents.map((event) => {
+        
+        // 🌟 2. Declaramos las constantes que hacían falta aquí dentro
+        const fechaInicioFormateada = format(new Date(event.date), "dd MMM yyyy - HH:mm");
+        const fechaFinFormateada = event.endDate ? format(new Date(event.endDate), "dd MMM yyyy - HH:mm") : null;
+
+        // 🌟 3. Abrimos el return explícito obligatorio para que funcione
+        return (
+          <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-semibold text-xl mb-1 text-gray-400 cursor-default">
+                  {event.name}
+                </h3>
+                <p className="text-sm font-mono text-gray-500">{event.eventNumber}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
+                <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Inactivo</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {!event.isPublic && <Lock className="w-5 h-5 text-blue-600" />}
-              <span className="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Inactivo</span>
+            <p className="text-gray-500 text-sm mb-4">{event.location}</p>
+
+            <div className="space-y-1">
+              {/* Fecha de Inicio */}
+              <p className="text-sm text-gray-400">
+                📅 Inicio: {fechaInicioFormateada}
+              </p>
+
+              {/* Fecha de Fin (Solo si existe en la base de datos) */}
+              {fechaFinFormateada && (
+                <p className="text-sm text-gray-400">
+                  🏁 Fin: {fechaFinFormateada}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
+              {/* Solo Editar y Eliminar para inactivos/finalizados */}
+              <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
+                <Edit3 size={20} />
+              </Link>
+
+              <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
+                <Trash2 size={20} />
+              </button>
             </div>
           </div>
+        ); // 🌟 Cerramos el return con paréntesis y punto y coma
+      })} {/* 🌟 Cerramos el .map() con la llave y el paréntesis correspondiente */}
 
-         <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-
-<div className="space-y-1">
-  {/* Fecha de Inicio */}
-  <p className="text-sm text-gray-400">
-    📅 Inicio: {fechaInicioFormateada}
-  </p>
-
-  {/* Fecha de Fin (Solo si existe en la base de datos) */}
-  {fechaFinFormateada && (
-    <p className="text-sm text-gray-400">
-      🏁 Fin: {fechaFinFormateada}
-    </p>
-  )}
-</div>
-
-          <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
-            {/* Solo Editar y Eliminar para inactivos/finalizados */}
-            <Link href={`/eventos/editar/${event.id}`} className="flex items-center justify-center w-10 h-10 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Editar">
-              <Edit3 size={20} />
-            </Link>
-
-            <button onClick={() => deleteEvent(event.id, event.name)} className="flex items-center justify-center w-10 h-10 text-red-600 hover:bg-red-50 rounded-xl transition" title="Eliminar">
-              <Trash2 size={20} />
-            </button>
-          </div>
-        </div>
-      ))}
     </div>
   </div>
 )}

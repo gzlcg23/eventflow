@@ -170,6 +170,25 @@ const shareEvent = (event: any) => {
         const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - eventDate.getTime()) / (1000 * 3600 * 24)) : 0;
         const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días para archivar
 
+        // 🌟 NUEVA CONSTANTE PARA CALCULAR EL RANGO DE FECHAS:
+        const fechaInicio = eventDate;
+        const fechaFin = event.endDate ? new Date(event.endDate) : null;
+
+        let textoFecha = format(fechaInicio, "dd MMM yyyy - HH:mm");
+
+if (fechaFin) {
+  // Comparamos si el evento inicia y termina el mismo día de calendario
+  const esMismoDia = format(fechaInicio, "yyyyMMdd") === format(fechaFin, "yyyyMMdd");
+
+  if (esMismoDia) {
+    // Si es el mismo día, muestra: "09 Jun 2026 • 10:00 a 18:00"
+    textoFecha = `${format(fechaInicio, "dd MMM yyyy")} • ${format(fechaInicio, "HH:mm")} a ${format(fechaFin, "HH:mm")}`;
+  } else {
+    // Si dura más de un día, muestra: "09 Jun 10:00 al 12 Jun 18:00 2026"
+    textoFecha = `${format(fechaInicio, "dd MMM HH:mm")} al ${format(fechaFin, "dd MMM HH:mm yyyy")}`;
+  }
+}
+
         return (
           <div key={event.id} className="bg-white border rounded-3xl p-6 hover:shadow-lg transition group">
             <div className="flex justify-between items-start mb-4">
@@ -212,10 +231,11 @@ const shareEvent = (event: any) => {
             </div>
 
             <p className="text-gray-500 text-sm mb-4">{event.location}</p>
-            <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
-              {format(eventDate, "dd MMM yyyy - HH:mm")}
-              {isPast && " • Finalizado"}
-            </p>
+<p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
+  {/* 🌟 Pintamos la constante con el rango inteligente */}
+  📅 {textoFecha}
+  {isPast && " • Finalizado"}
+</p>
 
             <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
               {/* Check-in siempre visible si está activo */}

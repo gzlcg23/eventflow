@@ -224,14 +224,14 @@ const shareEvent = (event: any) => {
 <div className="space-y-1">
   {/* Fecha de Inicio */}
   <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
-    <span>📅 Inicio: {fechaInicioFormateada}</span>
+    <span>Inicio: {fechaInicioFormateada}</span>
     {isPast && " • Finalizado"}
   </p>
 
   {/* Fecha de Fin (Solo se muestra si existe en la base de datos) */}
   {fechaFinFormateada && (
     <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
-      <span>🏁 Fin: {fechaFinFormateada}</span>
+      <span>Fin: {fechaFinFormateada}</span>
     </p>
   )}
 </div>
@@ -316,13 +316,13 @@ const shareEvent = (event: any) => {
             <div className="space-y-1">
               {/* Fecha de Inicio */}
               <p className="text-sm text-gray-400">
-                📅 Inicio: {fechaInicioFormateada}
+                Inicio: {fechaInicioFormateada}
               </p>
 
               {/* Fecha de Fin (Solo si existe en la base de datos) */}
               {fechaFinFormateada && (
                 <p className="text-sm text-gray-400">
-                  🏁 Fin: {fechaFinFormateada}
+                Fin: {fechaFinFormateada}
                 </p>
               )}
             </div>

@@ -180,64 +180,77 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       doc.text(stat.label, startX, 63);
     });
 
-    // --- CÁLCULOS FINANCIEROS BIEN OPERADOS ---
-    const grossProfit = activeEvents.length * COSTO_POR_EVENTO;
-    const iva = grossProfit * 0.16;
-    const domainCost = 450;
-    const serverCost = 200;
-    const totalCosts = iva + domainCost + serverCost;
-    const netProfit = grossProfit - totalCosts;
+// --- CÁLCULOS FINANCIEROS BIEN OPERADOS (MÉTODO FISCAL CORRECTO) ---
+// La ganancia bruta acumulada es el total ingresado a caja.
+const totalIngresosSaaS = activeEvents.length * COSTO_POR_EVENTO; 
 
-    const partner1Share = netProfit * 0.40;   // Socio 1 - 40%
-    const partner2Share = netProfit * 0.60;   // Socio 2 - 60%
+// Desglosamos el IVA contenido en los ingresos totales
+const gananciaSubtotal = totalIngresosSaaS / 1.16;
+const ivaContenido = totalIngresosSaaS - gananciaSubtotal;
 
-    // --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text("02. ESTADO DE RESULTADOS & PARTICIPACIÓN", 16, 82);
+// Costos fijos operativos de infraestructura
+const domainCost = 450;
+const serverCost = 200;
 
-    const financialRows = [
-      ['Ganancia Bruta corporativa', `$${grossProfit.toLocaleString('es-MX')}`],
-      ['- Impuesto sobre el Valor Añadido (IVA 16%)', `$${iva.toLocaleString('es-MX')}`],
-      ['- Costos fijos operativos (Dominio)', `$${domainCost.toLocaleString('es-MX')}`],
-      ['- Costos fijos operativos (Infraestructura / Servidor)', `$${serverCost.toLocaleString('es-MX')}`],
-      ['GANANCIA NETA DISTRIBUIBLE', `$${netProfit.toLocaleString('es-MX')}`],
-      ['Asignación Socio 1 (Distribución 40%)', `$${partner1Share.toLocaleString('es-MX')}`],
-      ['Asignación Socio 2 (Distribución 60%)', `$${partner2Share.toLocaleString('es-MX')}`]
-    ];
+// El total de costos fijos que disminuyen la base distribuible (el IVA no es un costo, se desglosa del ingreso)
+const totalCostsFijos = domainCost + serverCost;
 
-    autoTable(doc, {
-      body: financialRows,
-      startY: 87,
-      margin: { left: 16, right: 16 },
-      theme: 'plain',
-      styles: {
-        font: 'helvetica',
-        fontSize: 9,
-        cellPadding: 3.5,
-        textColor: [45, 55, 72]
-      },
-      columnStyles: {
-        0: { cellWidth: 130 },
-        1: { cellWidth: 48, halign: 'right', fontStyle: 'bold' }
-      },
-      didParseCell: function (data) {
-        // Estilo brutalista disruptivo para la fila de Ganancia Neta (Fila índice 4)
-        if (data.row.index === 4) {
-          data.cell.styles.fillColor = [26, 32, 44]; // Fondo oscuro completo
-          data.cell.styles.textColor = [255, 255, 255]; // Texto blanco
-          data.cell.styles.fontStyle = 'bold';
-        }
-        // Subrayado sutil para los socios para denotar reparto final
-        if (data.row.index > 4) {
-          data.cell.styles.fillColor = [252, 253, 253];
-          if (data.column.index === 1) {
-            data.cell.styles.textColor = successColor;
-          }
-        }
+// Ganancia Neta Real Distribuible = Subtotal neto - Costos fijos operativos
+const netProfit = gananciaSubtotal - totalCostsFijos;
+
+// Reparto de dividendos sobre la utilidad neta real
+const partner1Share = netProfit * 0.40;   // Socio 1 - 40%
+const partner2Share = netProfit * 0.60;   // Socio 2 - 60%
+
+// --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
+doc.setFont("helvetica", "bold");
+doc.setFontSize(12);
+doc.setTextColor(0, 0, 0);
+doc.text("02. ESTADO DE RESULTADOS & PARTICIPACIÓN", 16, 82);
+
+const financialRows = [
+  ['Total Ingresos Brutos (Caja)', `$${totalIngresosSaaS.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Desglose de Impuesto Trasladado (IVA 16%)', `$${ivaContenido.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Subtotal Neto Operativo (Base)', `$${gananciaSubtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Costos fijos operativos (Dominio)', `$${domainCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['- Costos fijos operativos (Infraestructura / Servidor)', `$${serverCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['GANANCIA NETA DISTRIBUIBLE', `$${netProfit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Asignación Socio 1 (Distribución 40%)', `$${partner1Share.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Asignación Socio 2 (Distribución 60%)', `$${partner2Share.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]
+];
+
+autoTable(doc, {
+  body: financialRows,
+  startY: 87,
+  margin: { left: 16, right: 16 },
+  theme: 'plain',
+  styles: {
+    font: 'helvetica',
+    fontSize: 9,
+    cellPadding: 3.5,
+    textColor: [45, 55, 72]
+  },
+  columnStyles: {
+    0: { cellWidth: 130 },
+    1: { cellWidth: 48, halign: 'right', fontStyle: 'bold' }
+  },
+  didParseCell: function (data) {
+    // Ajustamos los índices debido al nuevo renglón intermedio de control (Subtotal Neto)
+    // Estilo brutalista disruptivo para la fila de Ganancia Neta (Ahora es la Fila índice 5)
+    if (data.row.index === 5) {
+      data.cell.styles.fillColor = [26, 32, 44]; // Fondo oscuro completo
+      data.cell.styles.textColor = [255, 255, 255]; // Texto blanco
+      data.cell.styles.fontStyle = 'bold';
+    }
+    // Subrayado sutil para los socios para denotar reparto final (Filas posteriores al índice 5)
+    if (data.row.index > 5) {
+      data.cell.styles.fillColor = [252, 253, 253];
+      if (data.column.index === 1) {
+        data.cell.styles.textColor = successColor;
       }
-    });
+    }
+  }
+});
 
     // --- BLOQUE 3: DETALLE COMPLETO DE EVENTOS ---
     const nextY = (doc as any).lastAutoTable.finalY + 14;

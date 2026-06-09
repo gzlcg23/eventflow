@@ -27,10 +27,11 @@ export default async function AdminPage() {
       date: true,
       isPublic: true,
       isActive: true,
-      archived: true,         // 🌟 CRUCIAL: Si no lo agregas aquí, el Frontend no sabe qué está archivado
+      archived: true,
       activatedAt: true,
       deactivationReason: true,
       createdAt: true,
+      paymentAmount: true, // 🌟 SOLUCIÓN 1: Traemos el monto real de la base de datos
       user: {
         select: {
           firstName: true,
@@ -44,14 +45,15 @@ export default async function AdminPage() {
     }
   });
 
-  return (
+ return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl font-bold">Super Admin Panel</h1>
         <p className="text-gray-600 mt-2">Control total de eventos y pagos</p>
       </div>
 
-      <SuperAdminClient events={allEvents} />
+      {/* 🌟 Pasamos los eventos ya limpios y con sus números reales al Cliente */}
+      <SuperAdminClient events={sanitizedEvents} />
     </div>
   );
 }

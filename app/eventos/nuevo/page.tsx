@@ -281,10 +281,10 @@ export default function NuevoEventoPage() {
       {/* 🌟 BANNER DE ADVERTENCIA DE POLÍTICAS DE NEGOCIO */}
       <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-2xl text-sm text-amber-800 mt-6">
         <p className="font-bold flex items-center gap-2 text-amber-900">
-          ⚠️ Revisa tus datos antes de continuar
+          ⚠️ Revisa bien tus datos antes de continuar
         </p>
         <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-          Para garantizar la integridad de tu cotización y las pasarelas de pago, <strong className="font-semibold text-amber-900">las fechas seleccionadas, la capacidad máxima de asistentes y el paquete comercial contratado quedarán completamente bloqueados</strong> una vez creado el evento. Solo podrás editar aspectos de información logística (nombre, descripción y enlaces).
+          Para garantizar la integridad de tu cotización y el pago del servicio, <strong className="font-semibold text-amber-900">las fechas de inicio y finalización, la privacidad del evento y la capacidad máxima de asistentes quedarán completamente bloqueados</strong> una vez creado el evento. Solo podrás editar aspectos de información logística (nombre, descripción y ubicación y link del mapa).
         </p>
       </div>
 

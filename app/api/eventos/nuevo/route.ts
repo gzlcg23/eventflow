@@ -161,16 +161,23 @@ export async function POST(req: Request) {
 
     // 6. Generación segura de número de evento
     const year = new Date().getFullYear();
-    let eventNumber = "";
+    let eventNumber = ""; // 🌟 Esta es la variable global del scope de la función
     let counter = 1000;
     let exists = true;
 
     while (exists) {
+      // Asignamos directamente a la variable externa, SIN usar 'let' o 'const' aquí adentro
       eventNumber = `EV-${year}-${String(counter).padStart(4, '0')}`;
-      exists = await prisma.event.findUnique({
-        where: { eventNumber }
-      }) !== null;
-      counter++;
+      
+      const duplicate = await prisma.event.findUnique({
+        where: { eventNumber: eventNumber }
+      });
+      
+      if (!duplicate) {
+        exists = false; // Rompemos el ciclo si el folio está libre
+      } else {
+        counter++; // Si ya existe, sumamos uno y volvemos a intentar
+      }
     }
 
     // 7. Generación segura de Slug único

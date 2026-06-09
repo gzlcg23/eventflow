@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from "next/link";
 import { format } from "date-fns";
-import { Copy, Edit3, Trash2, ExternalLink, Scan, Lock, Download, Share2, AlertCircle } from "lucide-react";
+import { Copy, Edit3, Eye, Trash2, ExternalLink, Scan, Lock, Download, Share2, AlertCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { toast } from "sonner"; // 🌟 1. IMPORTA TOAST AL INICIO
 

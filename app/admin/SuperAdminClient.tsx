@@ -180,11 +180,40 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
       doc.text(stat.label, startX, 63);
     });
 
-// --- CÁLCULOS FINANCIEROS BIEN OPERADOS (MÉTODO FISCAL CORRECTO) ---
-// La ganancia bruta acumulada es el total ingresado a caja.
-const totalIngresosSaaS = activeEvents.length * COSTO_POR_EVENTO; 
+// --- DICCIONARIO DE TARIFAS (Debe coincidir con tus PRICING_TIERS del frontend) ---
+const PLANES_PRECIOS: Record<string, { precioBase: number; costoDiaExtra: number }> = {
+  'TIER_BASIC':   { precioBase: 499,  costoDiaExtra: 150 }, // Ejemplo: Ajusta con tus precios reales
+  'TIER_MEDIUM':  { precioBase: 899,  costoDiaExtra: 250 }, 
+  'TIER_PREMIUM': { precioBase: 1499, costoDiaExtra: 400 }
+};
 
-// Desglosamos el IVA contenido en los ingresos totales
+// --- CÁLCULOS FINANCIEROS BIEN OPERADOS (DINÁMICO POR EVENTO) ---
+// Iteramos sobre cada evento activo para sumar lo que realmente pagó el organizador
+const totalIngresosSaaS = activeEvents.reduce((acumulado, evento) => {
+  // Buscamos la tarifa del plan; si no existe, asignamos un plan base por seguridad
+  const plan = PLANES_PRECIOS[evento.tierId] || { precioBase: 499, costoDiaExtra: 150 };
+  
+  let costoEvento = plan.precioBase;
+
+  // Si el evento es multidía, calculamos los días adicionales
+  if (evento.isMultiDay && evento.endDate && evento.date) {
+    const inicio = new Date(evento.date);
+    const fin = new Date(evento.endDate);
+    
+    // Diferencia en días enteros
+    const diferenciaTiempo = fin.getTime() - inicio.getTime();
+    const diasTotales = Math.ceil(diferenciaTiempo / (1000 * 60 * 60 * 24));
+    
+    if (diasTotales > 1) {
+      const diasExtras = diasTotales - 1;
+      costoEvento += (diasExtras * plan.costoDiaExtra);
+    }
+  }
+
+  return acumulado + costoEvento;
+}, 0);
+
+// Desglosamos el IVA contenido en los ingresos reales calculados
 const gananciaSubtotal = totalIngresosSaaS / 1.16;
 const ivaContenido = totalIngresosSaaS - gananciaSubtotal;
 
@@ -192,7 +221,7 @@ const ivaContenido = totalIngresosSaaS - gananciaSubtotal;
 const domainCost = 450;
 const serverCost = 200;
 
-// El total de costos fijos que disminuyen la base distribuible (el IVA no es un costo, se desglosa del ingreso)
+// El total de costos fijos que disminuyen la base distribuible
 const totalCostsFijos = domainCost + serverCost;
 
 // Ganancia Neta Real Distribuible = Subtotal neto - Costos fijos operativos
@@ -209,7 +238,7 @@ doc.setTextColor(0, 0, 0);
 doc.text("02. ESTADO DE RESULTADOS & PARTICIPACIÓN", 16, 82);
 
 const financialRows = [
-  ['Total Ingresos Brutos (Caja)', `$${totalIngresosSaaS.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+  ['Total Ingresos Brutos (Caja Real)', `$${totalIngresosSaaS.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
   ['- Desglose de Impuesto Trasladado (IVA 16%)', `$${ivaContenido.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
   ['Subtotal Neto Operativo (Base)', `$${gananciaSubtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
   ['- Costos fijos operativos (Dominio)', `$${domainCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
@@ -235,14 +264,11 @@ autoTable(doc, {
     1: { cellWidth: 48, halign: 'right', fontStyle: 'bold' }
   },
   didParseCell: function (data) {
-    // Ajustamos los índices debido al nuevo renglón intermedio de control (Subtotal Neto)
-    // Estilo brutalista disruptivo para la fila de Ganancia Neta (Ahora es la Fila índice 5)
     if (data.row.index === 5) {
-      data.cell.styles.fillColor = [26, 32, 44]; // Fondo oscuro completo
-      data.cell.styles.textColor = [255, 255, 255]; // Texto blanco
+      data.cell.styles.fillColor = [26, 32, 44];
+      data.cell.styles.textColor = [255, 255, 255];
       data.cell.styles.fontStyle = 'bold';
     }
-    // Subrayado sutil para los socios para denotar reparto final (Filas posteriores al índice 5)
     if (data.row.index > 5) {
       data.cell.styles.fillColor = [252, 253, 253];
       if (data.column.index === 1) {

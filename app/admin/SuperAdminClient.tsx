@@ -86,8 +86,18 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     currentPage * itemsPerPage
   );
 
+  // ==================== 🌟 SISTEMA FINANCIERO UNIFICADO DE VERDAD ====================
   const activeEvents = filteredEvents.filter(e => e.isActive);
-  const totalIncome = activeEvents.length * COSTO_POR_EVENTO;
+
+  // Suma e igualación segura del Decimal de Prisma
+  const totalIncomeReal = useMemo(() => {
+    return activeEvents.reduce((acumulado, evento) => {
+      const monto = evento.paymentAmount 
+        ? Number(evento.paymentAmount.toString() || evento.paymentAmount) 
+        : 0;
+      return acumulado + monto;
+    }, 0);
+  }, [activeEvents]);
 
   // ==================== EXPORTAR EXCEL (.xlsx) ====================
   const exportExcel = () => {
@@ -219,21 +229,18 @@ const totalIngresosRealesSaaS = activeEvents.reduce((acumulado, evento) => {
   return acumulado + (Number(evento.paymentAmount) || 0);
 }, 0);
 
-// Desglosamos el IVA contenido en los ingresos reales cobrados
-const gananciaSubtotalReal = totalIngresosRealesSaaS / 1.16;
-const ivaContenidoReal = totalIngresosRealesSaaS - gananciaSubtotalReal;
+// --- CÁLCULOS SOBRE LO REAL DE LA BASE DE DATOS ---
+    const gananciaSubtotalReal = totalIncomeReal / 1.16;
+    const ivaContenidoReal = totalIncomeReal - gananciaSubtotalReal;
 
-// Costos fijos operativos de infraestructura
-const domainCostReal = 450;
-const serverCostReal = 200;
-const totalCostsFijosReal = domainCostReal + serverCostReal;
+    const domainCostReal = 450;
+    const serverCostReal = 200;
+    const totalCostsFijosReal = domainCostReal + serverCostReal;
 
-// Ganancia Neta Real Distribuible
-const netProfitReal = gananciaSubtotalReal - totalCostsFijosReal;
+    const netProfitReal = gananciaSubtotalReal - totalCostsFijosReal;
 
-// Reparto de dividendos exacto
-const partner1ShareReal = netProfitReal * 0.40;
-const partner2ShareReal = netProfitReal * 0.60;
+    const partner1ShareReal = netProfitReal * 0.40;
+    const partner2ShareReal = netProfitReal * 0.60;
 
 // --- BLOQUE 2: BALANCE DE GANANCIAS (TABLA JUSTIFICADA) ---
 doc.setFont("helvetica", "bold");
@@ -506,8 +513,9 @@ autoTable(doc, {
             <p className="text-5xl font-bold mt-2">{activeEvents.length}</p>
           </div>
           <div>
-            <p className="text-emerald-100 text-sm">Ingreso Total</p>
-            <p className="text-5xl font-bold mt-2">${totalIncome.toLocaleString('es-MX')}</p>
+            <p className="text-emerald-100 text-sm">Ingreso Total Real</p>
+            {/* 🌟 MUESTRA EL REDUCE REAL DE TU BASE DE DATOS EN LA CARD VERDE */}
+            <p className="text-5xl font-bold mt-2">${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
           </div>
           <div>
             <p className="text-emerald-200 text-sm">Costo por Evento</p>

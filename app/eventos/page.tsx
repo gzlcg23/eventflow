@@ -116,8 +116,38 @@ const shareEvent = (event: any) => {
 
   // Separar eventos activos y finalizados
   // 🌟 CORRECCIÓN TÉCNICA: Filtramos para ignorar los eventos archivados por el Cron Job o el sistema
-  const activeEvents = events.filter(e => e.isActive && !e.archived);
-  const pastEvents = events.filter(e => !e.isActive && !e.archived);
+  // 🌟 SEPARACIÓN DEFENSIVA DE ARREGLOS
+  const now = new Date();
+
+  // Activos: Tienen switch encendido Y su fecha de fin (o inicio + 1 día si es un registro viejo nulo) no ha pasado
+  const activeEvents = events.filter(e => {
+    if (e.archived) return false;
+    if (!e.isActive) return false;
+
+    // Si tiene fecha de fin (eventos nuevos), se compara al minuto exacto
+    if (e.endDate) {
+      return new Date(e.endDate) >= now;
+    } else {
+      // Si es un evento viejo con endDate nulo, le damos el día de gracia para proteger la UX
+      const fechaLimiteActivo = new Date(e.date);
+      fechaLimiteActivo.setDate(fechaLimiteActivo.getDate() + 1);
+      return fechaLimiteActivo >= now;
+    }
+  });
+
+  // Pasados / Inactivos
+  const pastEvents = events.filter(e => {
+    if (e.archived) return false;
+    if (!e.isActive) return true; // Desactivados manualmente van para abajo
+
+    if (e.endDate) {
+      return new Date(e.endDate) < now;
+    } else {
+      const fechaLimiteActivo = new Date(e.date);
+      fechaLimiteActivo.setDate(fechaLimiteActivo.getDate() + 1);
+      return fechaLimiteActivo < now;
+    }
+  });
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -165,13 +195,20 @@ const shareEvent = (event: any) => {
     <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {activeEvents.map((event) => {
-        // 🌟 CORRECCIÓN TÉCNICA: Si el evento es multidía, se evalúa contra 'endDate', si no, contra 'date'
-        const fechaReferenciaFin = event.endDate ? new Date(event.endDate) : new Date(event.date);
-        const isPast = fechaReferenciaFin < new Date(); // El evento finalizó de verdad si ya pasó la fecha de cierre
+        // Determinar de forma exacta cuándo expira el evento protegiendo los nulos viejos
+        const fechaExactaFin = event.endDate 
+          ? new Date(event.endDate) 
+          : (() => {
+              const limite = new Date(event.date);
+              limite.setDate(limite.getDate() + 1);
+              return limite;
+            })();
+
+        const isPast = fechaExactaFin < new Date();
         
-        // El cálculo de días restantes para archivar ahora se mide de forma real desde que terminó el evento
-        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - fechaReferenciaFin.getTime()) / (1000 * 3600 * 24)) : 0;
-        const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días de gracia para archivar
+        // Cálculo de días para archivar
+        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - fechaExactaFin.getTime()) / (1000 * 3600 * 24)) : 0;
+        const daysLeft = Math.max(60 - daysSinceEnd, 0);
         
         // 🌟 CONSTANTES PARA MOSTRAR INICIO Y FIN POR SEPARADO:
         

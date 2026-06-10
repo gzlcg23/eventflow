@@ -324,7 +324,7 @@ const shareEvent = (event: any) => {
  {/* Eventos Inactivos / Finalizados */}
 {pastEvents.length > 0 && (
   <div>
-    <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Inactivos ({pastEvents.length})</h2>
+    <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Finalizados / Inactivos ({pastEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
       
       {/* 🌟 1. Cambiamos el inicio del map abriendo llaves { */}

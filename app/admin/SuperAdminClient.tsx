@@ -33,7 +33,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     setMounted(true);
   }, []);
 
-// ==================== FILTRADO DE EVENTOS OPTIMIZADO ====================
+// ==================== FILTRADO DE EVENTOS OPTIMIZADO ==================== 
   const filteredEvents = useMemo(() => {
     let result = [...initialEvents];
 

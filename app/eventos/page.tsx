@@ -116,38 +116,8 @@ const shareEvent = (event: any) => {
 
   // Separar eventos activos y finalizados
   // 🌟 CORRECCIÓN TÉCNICA: Filtramos para ignorar los eventos archivados por el Cron Job o el sistema
-  // 🌟 SEPARACIÓN DEFENSIVA DE ARREGLOS
-  const now = new Date();
-
-  // Activos: Tienen switch encendido Y su fecha de fin (o inicio + 1 día si es un registro viejo nulo) no ha pasado
-  const activeEvents = events.filter(e => {
-    if (e.archived) return false;
-    if (!e.isActive) return false;
-
-    // Si tiene fecha de fin (eventos nuevos), se compara al minuto exacto
-    if (e.endDate) {
-      return new Date(e.endDate) >= now;
-    } else {
-      // Si es un evento viejo con endDate nulo, le damos el día de gracia para proteger la UX
-      const fechaLimiteActivo = new Date(e.date);
-      fechaLimiteActivo.setDate(fechaLimiteActivo.getDate() + 1);
-      return fechaLimiteActivo >= now;
-    }
-  });
-
-  // Pasados / Inactivos
-  const pastEvents = events.filter(e => {
-    if (e.archived) return false;
-    if (!e.isActive) return true; // Desactivados manualmente van para abajo
-
-    if (e.endDate) {
-      return new Date(e.endDate) < now;
-    } else {
-      const fechaLimiteActivo = new Date(e.date);
-      fechaLimiteActivo.setDate(fechaLimiteActivo.getDate() + 1);
-      return fechaLimiteActivo < now;
-    }
-  });
+  const activeEvents = events.filter(e => e.isActive && !e.archived);
+  const pastEvents = events.filter(e => !e.isActive && !e.archived);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -195,20 +165,19 @@ const shareEvent = (event: any) => {
     <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {activeEvents.map((event) => {
-        // Determinar de forma exacta cuándo expira el evento protegiendo los nulos viejos
-        const fechaExactaFin = event.endDate 
-          ? new Date(event.endDate) 
-          : (() => {
-              const limite = new Date(event.date);
-              limite.setDate(limite.getDate() + 1);
-              return limite;
-            })();
+        // 🌟 EVALUACIÓN DE EXPIRACIÓN AL MINUTO EXACTO (Evita errores con nulos)
+                  const fechaExactaFin = event.endDate 
+                    ? new Date(event.endDate) 
+                    : (() => {
+                        const limite = new Date(event.date);
+                        limite.setDate(limite.getDate() + 1); // Día de gracia para nulos viejos
+                        return limite;
+                      })();
 
-        const isPast = fechaExactaFin < new Date();
-        
-        // Cálculo de días para archivar
-        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - fechaExactaFin.getTime()) / (1000 * 3600 * 24)) : 0;
-        const daysLeft = Math.max(60 - daysSinceEnd, 0);
+                  const isPast = fechaExactaFin < new Date();
+                  
+                  const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - fechaExactaFin.getTime()) / (1000 * 3600 * 24)) : 0;
+                  const daysLeft = Math.max(60 - daysSinceEnd, 0);
         
         // 🌟 CONSTANTES PARA MOSTRAR INICIO Y FIN POR SEPARADO:
         
@@ -262,19 +231,17 @@ const shareEvent = (event: any) => {
             <p className="text-gray-500 text-sm mb-4">{event.location}</p>
 
 <div className="space-y-1">
-  {/* Fecha de Inicio */}
-  <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
-    <span>Inicio: {fechaInicioFormateada}</span>
-    {isPast && " • Finalizado"}
-  </p>
+                        <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
+                          <span>Inicio: {fechaInicioFormateada}</span>
+                          {isPast && " • Finalizado"}
+                        </p>
 
-  {/* Fecha de Fin (Solo se muestra si existe en la base de datos) */}
-  {fechaFinFormateada && (
-    <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
-      <span>Fin: {fechaFinFormateada}</span>
-    </p>
-  )}
-</div>
+                        {fechaFinFormateada && (
+                          <p className={`text-sm font-medium ${isPast ? 'text-red-600' : 'text-gray-400'}`}>
+                            <span>Fin: {fechaFinFormateada}</span>
+                          </p>
+                        )}
+                      </div>
 
             <div className="mt-6 pt-4 border-t flex flex-wrap gap-2">
               {/* Check-in siempre visible si está activo */}
@@ -324,7 +291,7 @@ const shareEvent = (event: any) => {
  {/* Eventos Inactivos / Finalizados */}
 {pastEvents.length > 0 && (
   <div>
-    <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Finalizados / Inactivos ({pastEvents.length})</h2>
+    <h2 className="text-2xl font-semibold mb-6 text-gray-500">Eventos Inactivos ({pastEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
       
       {/* 🌟 1. Cambiamos el inicio del map abriendo llaves { */}

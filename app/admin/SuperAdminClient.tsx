@@ -99,31 +99,95 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
     }, 0);
   }, [activeEvents]);
 
-  // ==================== EXPORTAR EXCEL (.xlsx) ====================
+ // ==================== EXPORTAR EXCEL CON RESUMEN CONTABLE (.xlsx) ====================
   const exportExcel = () => {
     if (filteredEvents.length === 0) {
       alert("No hay datos para exportar");
       return;
     }
 
-    const data = filteredEvents.map(event => ({
+    // 1. OBTENER LOS MISMOS VALORES FINANCIEROS REALES QUE EL PDF
+    const totalIngresosRealesSaaS = activeEvents.reduce((acumulado, evento) => {
+      return acumulado + (Number(evento.paymentAmount) || 0);
+    }, 0);
+
+    const gananciaSubtotalReal = totalIngresosRealesSaaS / 1.16;
+    const ivaContenidoReal = totalIngresosRealesSaaS - gananciaSubtotalReal;
+    
+    const domainCostReal = 450;
+    const serverCostReal = 200;
+    const totalCostsFijosReal = domainCostReal + serverCostReal;
+    
+    const netProfitReal = gananciaSubtotalReal - totalCostsFijosReal;
+    
+    const partner1ShareReal = netProfitReal * 0.40;
+    const partner2ShareReal = netProfitReal * 0.60;
+
+    // 2. CONSTRUIRE EL BLOQUE INICIAL: RESUMEN FINANCIERO EJECUTIVO
+    const financialSummary = [
+      ["REPORTE FINANCIERO Y OPERATIVO SUPER ADMIN"],
+      [`Fecha de Corte: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
+      [],
+      ["MÉTRICA / CONCEPTO", "VALOR / MONTO (MXN)"],
+      ["Eventos Totales Filtrados", filteredEvents.length],
+      ["Eventos Activos (Caja)", activeEvents.length],
+      ["Eventos Inactivos / Archivados", filteredEvents.length - activeEvents.length],
+      ["Total Ingresos Brutos (Caja Real)", totalIngresosRealesSaaS],
+      ["- IVA Trasladado Desglosado (16%)", ivaContenidoReal],
+      ["Subtotal Neto Operativo (Base)", gananciaSubtotalReal],
+      ["- Costos Operativos Fijos (Dominio)", domainCostReal],
+      ["- Costos Operativos Fijos (Servidor)", serverCostReal],
+      ["GANANCIA NETA DISTRIBUIBLE", netProfitReal],
+      ["Distribución Socio 1 (40%)", partner1ShareReal],
+      ["Distribución Socio 2 (60%)", partner2ShareReal],
+      [], // Fila vacía de separación
+      ["DETALLE GENERAL DE EVENTOS"], // Encabezado de la tabla principal
+      [] // Fila vacía antes de los títulos de las columnas de eventos
+    ];
+
+    // 3. MAPEAR EL LISTADO DE EVENTOS PARA EL CUERPO DEL REPORTE
+    const eventsData = filteredEvents.map(event => ({
       "Número": event.eventNumber || '',
       "Evento": event.name,
-      "Organizador": `${event.user.firstName || ''} ${event.user.lastName || ''}`.trim(),
-      "Email": event.user.email || '',
-      "Fecha Evento": event.date ? format(new Date(event.date), "dd/MM/yyyy") : '',
-      "Estado": event.isActive ? "Activo" : "Inactivo",
-      "Activado": event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : '',
-      "Razón Desactivación": event.deactivationReason || ''
+      "Organizador": `${event.user?.firstName || ''} ${event.user?.lastName || ''}`.trim(),
+      "Email": event.user?.email || '',
+      "Fecha Evento": event.date ? format(new Date(event.date), "dd/MM/yyyy HH:mm") : '',
+      "Fecha Fin": event.endDate ? format(new Date(event.endDate), "dd/MM/yyyy HH:mm") : 'N/A',
+      "Tipo": event.isPublic ? "Público" : "Privado",
+      "Estado": event.archived ? "Archivado (Cron)" : event.isActive ? "Activo" : "Inactivo",
+      "Monto Recaudado": Number(event.paymentAmount) || 0,
+      "Activado El": event.activatedAt ? format(new Date(event.activatedAt), "dd/MM/yyyy HH:mm") : 'Pendiente',
+      "Motivo de Baja": event.deactivationReason || ''
     }));
 
-    const ws = XLSX.utils.json_to_sheet(data);
+    // 4. GENERAR LA HOJA HÍBRIDA USANDO LA UTILIDAD DE ARREGLOS DE XLSX
+    // Convertimos la estructura financiera en filas planas de Excel
+    const ws = XLSX.utils.aoa_to_sheet(financialSummary);
+
+    // Inyectamos el listado de eventos justo abajo del bloque financiero (Fila 19 en adelante)
+    XLSX.utils.sheet_add_json(ws, eventsData, { origin: "A19" });
+
+    // 5. AJUSTAR ANCHOS DE COLUMNA AUTOMÁTICOS PARA QUE NO SE CORTE NADA
+    ws['!cols'] = [
+      { wch: 18 }, // Número de evento
+      { wch: 30 }, // Nombre del Evento
+      { wch: 25 }, // Organizador
+      { wch: 28 }, // Email
+      { wch: 18 }, // Fecha Evento
+      { wch: 18 }, // Fecha Fin
+      { wch: 12 }, // Tipo
+      { wch: 18 }, // Estado
+      { wch: 18 }, // Monto Recaudado
+      { wch: 18 }, // Activado El
+      { wch: 30 }  // Motivo de Baja
+    ];
+
+    // 6. CREAR LIBRO Y DESCARGAR
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Eventos");
+    XLSX.utils.book_append_sheet(wb, ws, "Auditoría Operativa");
 
-    XLSX.writeFile(wb, `Reporte_SuperAdmin_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
+    XLSX.writeFile(wb, `Reporte_Auditoria_SuperAdmin_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`);
   };
-
  // ==================== EXPORTAR PDF (DISEÑO EDITORIAL MINIMALISTA) ====================
   const exportFinancialPDF = () => {
     // 🌟 Usamos las instancias importadas estáticamente al inicio del archivo para Next.js

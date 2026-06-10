@@ -579,7 +579,7 @@ autoTable(doc, {
           <div>
             <p className="text-emerald-100 text-sm">Ingreso Total Real</p>
             <p className="text-5xl font-bold mt-2">
-              ${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              ${totalIncomeReal.toLocaleString('es-MX')}
             </p>
           </div>
           <div>

@@ -12,21 +12,39 @@ export default function NuevoEventoPage() {
   const [successData, setSuccessData] = useState<any>(null);
   const [isPublic, setIsPublic] = useState(true);
 
-  // 🌟 NUEVOS ESTADOS PARA EL MODELO MODULAR
+  // 🌟 ESTADOS REESTRUCTURADOS PARA OBLIGATORIEDAD FRONTEND
   const [tierId, setTierId] = useState('MICRO');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false); // Se mantiene solo como bandera lógica para el costo
   const [calculatedCost, setCalculatedCost] = useState(0);
 
-  // 🌟 EFECTO PARA CALCULAR EL COSTO DINÁMICAMENTE EN EL CLIENTE
+  // 🌟 TRUCO DE UX: Autocompletar la fecha de fin sumando 3 horas por defecto
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    if (val) {
+      const dateObj = new Date(val);
+      dateObj.setHours(dateObj.getHours() + 3); // Añade 3 horas por defecto
+      
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+      
+      setEndDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    }
+  };
+
+ // 🌟 EFECTO PARA CALCULAR EL COSTO DE MANERA INVISIBLE E INTELIGENTE
   useEffect(() => {
     const tier = PRICING_TIERS[tierId];
     if (!tier) return;
 
     let total = tier.priceMXN;
+    let esMultidiaDetectado = false;
 
-    if (isMultiDay && startDate && endDate) {
+    if (startDate && endDate) {
       const start = new Date(startDate).setHours(0, 0, 0, 0);
       const end = new Date(endDate).setHours(0, 0, 0, 0);
       
@@ -35,14 +53,16 @@ export default function NuevoEventoPage() {
         const totalDays = Math.ceil(differenceInTime / (1000 * 60 * 60 * 24)) + 1;
         
         if (totalDays > 1) {
+          esMultidiaDetectado = true;
           const extraDays = totalDays - 1;
           total = total + (total * MULTI_DAY_MULTIPLIER * extraDays);
         }
       }
     }
 
+    setIsMultiDay(esMultidiaDetectado);
     setCalculatedCost(Math.round(total));
-  }, [tierId, startDate, endDate, isMultiDay]);
+  }, [tierId, startDate, endDate]);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); 
@@ -50,9 +70,9 @@ export default function NuevoEventoPage() {
 
     const formData = new FormData(e.currentTarget);
     
-    // Validamos que si es multidía, tenga una fecha de fin válida
-    if (isMultiDay && (!endDate || new Date(endDate) <= new Date(startDate))) {
-      toast.error("Por favor, selecciona una fecha de finalización válida posterior al inicio.");
+    // VALIDACIÓN ESTRICTA EN EL FRONTEND
+    if (!endDate || new Date(endDate) <= new Date(startDate)) {
+      toast.error("Por favor, selecciona una fecha y hora de finalización posterior al inicio.");
       setIsLoading(false);
       return;
     }
@@ -61,12 +81,11 @@ export default function NuevoEventoPage() {
       name: formData.get("name"),
       description: formData.get("description"),
       date: startDate,
-      endDate: isMultiDay ? endDate : null,
+      endDate: endDate, // 🌟 AHORA SIEMPRE SE ENVÍA EN EL CONTENEDOR DEL POST
       location: formData.get("location"),
       locationUrl: formData.get("locationUrl"),
       isPublic: isPublic,
       accessCode: formData.get("accessCode"),
-      // 🌟 MANDAMOS EL CONTENIDO DE INFRAESTRUCTURA Y PRECIOS AL BACKEND
       tierId: tierId,
       capacity: PRICING_TIERS[tierId].maxAttendees,
       paymentAmount: calculatedCost,
@@ -163,44 +182,29 @@ export default function NuevoEventoPage() {
         <textarea name="description" rows={3} className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" />
       </div>
 
-      {/* Gestión Dinámica de Fechas (Multidía) */}
+      {/* Gestión de Fechas Obligatoria en la Interfaz */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">Fecha de Inicio *</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">Fecha y Hora de Inicio *</label>
           <input 
             type="datetime-local" 
             required 
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => handleStartDateChange(e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" 
           />
         </div>
         
-        {isMultiDay && (
-          <div className="animate-in fade-in duration-200">
-            <label className="block text-sm font-medium mb-2 text-gray-700">Fecha de Finalización *</label>
-            <input 
-              type="datetime-local" 
-              required={isMultiDay}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" 
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-3">
-        <input 
-          type="checkbox" 
-          id="isMultiDay"
-          checked={isMultiDay}
-          onChange={(e) => setIsMultiDay(e.target.checked)}
-          className="w-5 h-5 text-black border-gray-300 rounded focus:ring-black accent-black cursor-pointer"
-        />
-        <label htmlFor="isMultiDay" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
-          Este evento dura más de 1 día (Aplica cargos multidía)
-        </label>
+        <div>
+          <label className="block text-sm font-medium mb-2 text-gray-700">Fecha y Hora de Finalización *</label>
+          <input 
+            type="datetime-local" 
+            required
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition" 
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -77,11 +77,16 @@ export default function NuevoEventoPage() {
       return;
     }
 
+    // 🌟 Convertir los strings planos del input en objetos Date locales y pasarlos a ISO con zona horaria
+    // Al pasar el string del input a un objeto Date en el cliente, Next de manera nativa mapea tu zona horaria local.
+    const isoStartDate = startDate ? new Date(startDate).toISOString() : '';
+    const isoEndDate = endDate ? new Date(endDate).toISOString() : '';
+
     const payload = {
       name: formData.get("name"),
       description: formData.get("description"),
-      date: startDate,
-      endDate: endDate, // 🌟 AHORA SIEMPRE SE ENVÍA EN EL CONTENEDOR DEL POST
+      date: isoStartDate,    // 🌟 Ahora viaja en formato "2026-06-10T23:00:00.000Z" perfectamente calculado
+      endDate: isoEndDate,  // 🌟 Así el backend y Neon saben exactamente a qué minuto corresponde en el universo
       location: formData.get("location"),
       locationUrl: formData.get("locationUrl"),
       isPublic: isPublic,

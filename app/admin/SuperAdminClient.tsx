@@ -23,7 +23,7 @@ export default function SuperAdminClient({ events: initialEvents }: { events: an
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modal de razón
+  // Modal de razónf
   const [showModal, setShowModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deactivationReason, setDeactivationReason] = useState("");
@@ -579,7 +579,7 @@ autoTable(doc, {
           <div>
             <p className="text-emerald-100 text-sm">Ingreso Total Real</p>
             <p className="text-5xl font-bold mt-2">
-              ${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${totalIncomeReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div>

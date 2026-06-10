@@ -165,10 +165,13 @@ const shareEvent = (event: any) => {
     <h2 className="text-2xl font-semibold mb-6 text-emerald-700">Eventos Activos ({activeEvents.length})</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {activeEvents.map((event) => {
-        const eventDate = new Date(event.date);
-        const isPast = eventDate < new Date();   // Ya pasó la fecha
-        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - eventDate.getTime()) / (1000 * 3600 * 24)) : 0;
-        const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días para archivar
+        // 🌟 CORRECCIÓN TÉCNICA: Si el evento es multidía, se evalúa contra 'endDate', si no, contra 'date'
+        const fechaReferenciaFin = event.endDate ? new Date(event.endDate) : new Date(event.date);
+        const isPast = fechaReferenciaFin < new Date(); // El evento finalizó de verdad si ya pasó la fecha de cierre
+        
+        // El cálculo de días restantes para archivar ahora se mide de forma real desde que terminó el evento
+        const daysSinceEnd = isPast ? Math.floor((new Date().getTime() - fechaReferenciaFin.getTime()) / (1000 * 3600 * 24)) : 0;
+        const daysLeft = Math.max(60 - daysSinceEnd, 0); // 60 días de gracia para archivar
         
         // 🌟 CONSTANTES PARA MOSTRAR INICIO Y FIN POR SEPARADO:
         
